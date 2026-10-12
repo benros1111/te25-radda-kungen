@@ -10,16 +10,31 @@
       height: 100%;
       overflow: hidden;
       background: #87ceeb;
-      font-family: sans-serif;
+      font-family: "Trebuchet MS", sans-serif;
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
     }
     #hud {
       position: fixed;
       top: 12px;
       left: 12px;
+      right: 70px;
       color: white;
       font-size: 22px;
       font-weight: bold;
       text-shadow: 2px 2px 0 #000;
+    }
+    #ljudKnapp {
+      position: fixed;
+      top: 8px;
+      right: 10px;
+      font-size: 26px;
+      background: rgba(0, 0, 0, 0.3);
+      border: none;
+      border-radius: 10px;
+      padding: 6px 10px;
+      cursor: pointer;
     }
     #hjalp {
       position: fixed;
@@ -29,135 +44,377 @@
       font-size: 16px;
       text-shadow: 1px 1px 0 #000;
     }
+    #banTitel {
+      position: fixed;
+      top: 22%;
+      left: 0;
+      right: 0;
+      text-align: center;
+      color: white;
+      font-size: 40px;
+      font-weight: bold;
+      text-shadow: 3px 3px 0 #000;
+      opacity: 0;
+      transition: opacity 0.6s;
+      pointer-events: none;
+    }
     .skarm {
       position: fixed;
       inset: 0;
+      z-index: 10;
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
+      justify-content: safe center;
       padding: 16px;
-      background: rgba(0, 0, 0, 0.75);
+      overflow-y: auto;
+      touch-action: pan-y;
+      background: rgba(0, 0, 0, 0.7);
       color: white;
       text-align: center;
     }
-    .skarm h1 { font-size: 44px; margin: 0 0 12px; }
-    .skarm p { font-size: 20px; max-width: 600px; }
-    button {
-      font-size: 22px;
-      padding: 14px 26px;
-      margin: 8px;
-      border: none;
+    .skarm h1 { font-size: 42px; margin: 0 0 8px; text-shadow: 3px 3px 0 #000; }
+    .skarm h2 { font-size: 20px; margin: 14px 0 6px; }
+    .skarm p { font-size: 18px; max-width: 600px; margin: 6px 0; }
+    .skarm button {
+      font-size: 20px;
+      padding: 12px 22px;
+      margin: 5px;
+      border: 3px solid transparent;
       border-radius: 12px;
       cursor: pointer;
       font-weight: bold;
+      background: #e5e7eb;
+      color: #111;
     }
-    #knappMustafa { background: #ff7f11; color: white; }
-    #knappFahad { background: #7c3aed; color: white; }
+    .skarm button.vald { border-color: white; background: #22c55e; color: white; }
+    #knappStart { background: #f59e0b; color: white; font-size: 26px; margin-top: 16px; }
     .dold { display: none !important; }
 
-    /* ===== Mobilknappar ===== */
-    html, body { touch-action: none; user-select: none; -webkit-user-select: none; }
+    /* ===== Mobil: joystick och hoppknapp ===== */
     #mobil { display: none; }
     .mobil #mobil { display: block; }
     .mobil #hjalp { display: none; }
     .mobil #hud { font-size: 16px; }
-    .pilar, .handling {
+    .mobil #banTitel { font-size: 28px; }
+    #joyYta {
       position: fixed;
-      bottom: 20px;
-      display: grid;
-      gap: 8px;
-    }
-    .pilar {
-      left: 20px;
-      grid-template-columns: repeat(3, 60px);
-      grid-template-rows: repeat(3, 60px);
-    }
-    .handling { right: 20px; grid-template-columns: repeat(2, 80px); }
-    .tryck {
-      margin: 0;
-      padding: 0;
-      font-size: 26px;
-      color: white;
-      background: rgba(0, 0, 0, 0.35);
-      border: 2px solid rgba(255, 255, 255, 0.7);
-      border-radius: 50%;
+      left: 0;
+      bottom: 0;
+      width: 50%;
+      height: 75%;
       touch-action: none;
     }
-    .tryck.aktiv { background: rgba(255, 255, 255, 0.5); }
-    .handling .tryck { width: 80px; height: 80px; font-size: 16px; }
-    #mobilUpp { grid-column: 2; grid-row: 1; }
-    #mobilVanster { grid-column: 1; grid-row: 2; }
-    #mobilHoger { grid-column: 3; grid-row: 2; }
-    #mobilNer { grid-column: 2; grid-row: 3; }
+    #joyBas {
+      position: fixed;
+      left: 30px;
+      bottom: 30px;
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      background: rgba(0, 0, 0, 0.25);
+      border: 3px solid rgba(255, 255, 255, 0.6);
+      pointer-events: none;
+    }
+    #joyKnapp {
+      position: absolute;
+      left: 29px;
+      top: 29px;
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.8);
+    }
+    #hoppKnapp {
+      position: fixed;
+      right: 30px;
+      bottom: 40px;
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      font-size: 20px;
+      font-weight: bold;
+      color: white;
+      background: rgba(239, 68, 68, 0.7);
+      border: 3px solid rgba(255, 255, 255, 0.8);
+      touch-action: none;
+    }
+    #hoppKnapp.aktiv { background: rgba(255, 255, 255, 0.6); }
   </style>
 </head>
 <body>
   <div id="hud"></div>
-  <div id="hjalp">Pilar/WASD = spring · Mellanslag = hoppa · F = kasta boll</div>
+  <button id="ljudKnapp" title="Ljud på/av (M)">🔊</button>
+  <div id="hjalp">Pilar/WASD = spring · Mellanslag = hoppa (håll in = högre) · M = ljud</div>
+  <div id="banTitel"></div>
 
-  <!-- Knappar på skärmen (syns bara på mobil och surfplatta) -->
+  <!-- Mobil: joystick till vänster, hoppknapp till höger -->
   <div id="mobil">
-    <div class="pilar">
-      <button class="tryck" id="mobilUpp" data-kod="ArrowUp">▲</button>
-      <button class="tryck" id="mobilVanster" data-kod="ArrowLeft">◀</button>
-      <button class="tryck" id="mobilHoger" data-kod="ArrowRight">▶</button>
-      <button class="tryck" id="mobilNer" data-kod="ArrowDown">▼</button>
-    </div>
-    <div class="handling">
-      <button class="tryck" data-kod="KeyF">Kasta</button>
-      <button class="tryck" data-kod="Space">Hoppa</button>
-    </div>
+    <div id="joyYta"></div>
+    <div id="joyBas"><div id="joyKnapp"></div></div>
+    <button id="hoppKnapp">Hoppa</button>
   </div>
 
-  <!-- Startskärm: välj hjälte -->
+  <!-- Startskärm -->
   <div id="startSkarm" class="skarm">
     <h1>Rädda Kung Hussein!</h1>
-    <p>Ozi och Ludde har kidnappat Kung Hussein. Han sitter inlåst i en bur i slutet av banan. Kasta bollar på fienderna och rädda kungen!</p>
-    <p>Välj din hjälte:</p>
+    <p>Ozi och Ludde har kidnappat Kung Hussein. Ta dig igenom tre banor. Hoppa på fiendernas huvuden. Slå i lådorna med huvudet för att få mynt!</p>
+    <h2>Välj hjälte</h2>
     <div>
-      <button id="knappMustafa">Super Mustafa</button>
-      <button id="knappFahad">Prins Fahad</button>
+      <button class="val vald" data-hjalte="mustafa">Super Mustafa</button>
+      <button class="val" data-hjalte="fahad">Prins Fahad</button>
     </div>
+    <h2>Välj svårighet</h2>
+    <div>
+      <button class="val" data-svar="latt">Lätt</button>
+      <button class="val vald" data-svar="medel">Medel</button>
+      <button class="val" data-svar="svar">Svår</button>
+    </div>
+    <p id="svarText"></p>
+    <button id="knappStart">Starta!</button>
   </div>
 
-  <!-- Slutskärm: vinst eller förlust -->
+  <!-- Mellan banorna -->
+  <div id="mellanSkarm" class="skarm dold">
+    <h1 id="mellanRubrik"></h1>
+    <p id="mellanText"></p>
+    <button id="knappNasta">Nästa bana</button>
+  </div>
+
+  <!-- Slut: vinst eller game over -->
   <div id="slutSkarm" class="skarm dold">
     <h1 id="slutRubrik"></h1>
     <p id="slutText"></p>
-    <button id="knappIgen">Spela igen</button>
+    <div>
+      <button id="knappIgen">Försök banan igen</button>
+      <button id="knappMeny">Till menyn</button>
+    </div>
   </div>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.149.0/build/three.min.js"></script>
   <script>
-    // ===== INSTÄLLNINGAR – testa att ändra! =====
-    const SPRING_FART = 0.15;   // hur snabbt hjälten springer
-    const HOPP_KRAFT  = 0.32;   // hur högt hjälten hoppar
-    const TYNGDKRAFT  = 0.015;  // hur snabbt hjälten faller
-    const KAST_FART   = 0.5;    // hur snabbt bollen flyger
-    const LIV_START   = 3;      // antal liv
+    // =====================================================
+    // ===== INSTÄLLNINGAR – testa att ändra! ==============
+    // =====================================================
+    const MAX_FART    = 0.16;  // hur snabbt hjälten springer
+    const ACCEL_MARK  = 0.2;   // hur snabbt hjälten kommer upp i fart på marken
+    const ACCEL_LUFT  = 0.07;  // hur mycket man kan styra i luften
+    const SVANG_FART  = 0.18;  // hur snabbt hjälten vänder sig (1 = direkt)
+    const HOPP_KRAFT  = 0.34;  // hur högt hjälten hoppar
+    const TYNGDKRAFT  = 0.016; // hur snabbt hjälten faller
+    const FIENDE_FART = 0.035; // fiendernas fart
+
+    const SVARIGHETER = {
+      latt:  { namn: "Lätt",  liv: 5, fiendeFart: 0.6, jaktAvstand: 5,  skydd: 150,
+               text: "5 liv. Fienderna är långsamma och ser dig sent." },
+      medel: { namn: "Medel", liv: 3, fiendeFart: 1,   jaktAvstand: 8,  skydd: 100,
+               text: "3 liv. Fienderna jagar dig när du kommer nära." },
+      svar:  { namn: "Svår",  liv: 2, fiendeFart: 1.4, jaktAvstand: 12, skydd: 60,
+               text: "2 liv. Snabba fiender som ser dig långt bort!" }
+    };
 
     const HJALTAR = {
-      mustafa: { namn: "Super Mustafa", kropp: 0xff7f11, detalj: 0x1d4ed8 },
-      fahad:   { namn: "Prins Fahad",   kropp: 0x7c3aed, detalj: 0xfacc15 }
+      mustafa: { namn: "Super Mustafa", troja: 0xff7f11, byxor: 0x1d4ed8, detalj: 0x1d4ed8 },
+      fahad:   { namn: "Prins Fahad",   troja: 0x7c3aed, byxor: 0x312e81, detalj: 0xfacc15 }
     };
-    const HUD_FARG = 0xc68642; // hudfärg på huvudet
+    const HUD_FARG = 0xc68642;
 
-    // ===== 3D-världen =====
+    // =====================================================
+    // ===== BANORNA =======================================
+    // =====================================================
+    // P(x, z, bredd, djup, höjd, typ, hur långt den åker, startriktning)
+    // typ: "mark" = stor mark, "tra" = träplattform, "rorlig" = åker fram och tillbaka
+    const P = (x, z, w, d, topp, typ = "mark", rorelse = 0, riktning = 1) =>
+      ({ x, z, w, d, topp, typ, rorelse, riktning });
+    // En rad med mynt från en punkt till en annan
+    const rad = (xa, za, xb, zb, y, n) => Array.from({ length: n }, (_, i) => {
+      const t = n === 1 ? 0 : i / (n - 1);
+      return [xa + (xb - xa) * t, y, za + (zb - za) * t];
+    });
+
+    const BANOR = [
+      {
+        namn: "Gröna ängen", tema: "ang",
+        plattformar: [
+          P(0, 0, 14, 24, 0), P(0, -22, 14, 16, 0),
+          P(0, -35, 4, 4, 1.5, "tra"), P(3, -41, 4, 4, 3, "tra"),
+          P(0, -52, 14, 14, 0), P(0, -64, 4, 4, 0, "rorlig", 3),
+          P(0, -74, 12, 10, 0)
+        ],
+        block: [[-1, 3, -20], [0, 3, -20], [1, 3, -20], [-3, 3, -50], [3, 3, -50]],
+        mynt: [
+          ...rad(-4, 6, 4, 6, 1, 5), ...rad(0, 2, 0, -6, 1, 4),
+          ...rad(-5, -17, -5, -27, 1, 4), ...rad(5, -17, 5, -27, 1, 4),
+          [0, 2.5, -35], [3, 4, -41],
+          ...rad(-4, -55, 4, -55, 1, 5), [0, 2, -64], ...rad(-3, -71, 3, -71, 1, 3)
+        ],
+        fiender: [["ozi", 0, -24], ["ludde", -3, -51], ["ozi", 3, -56]],
+        mal: { typ: "flagga", x: 0, z: -76 }
+      },
+      {
+        namn: "Solöknen", tema: "oken",
+        plattformar: [
+          P(0, 0, 12, 20, 0), P(0, -14, 4, 4, 1, "tra"), P(-3, -20, 4, 4, 2.5, "tra"),
+          P(1, -26, 4, 4, 4, "tra"), P(0, -38, 14, 16, 2),
+          P(0, -50, 4, 4, 2, "rorlig", 4, 1), P(0, -57, 4, 4, 2, "rorlig", 4, -1),
+          P(0, -68, 14, 14, 0), P(0, -79, 3, 3, 1.5, "tra"), P(0, -88, 10, 10, 0)
+        ],
+        block: [[-2, 5, -38], [-1, 5, -38], [0, 5, -38], [1, 5, -38], [2, 5, -38], [-3, 3, -66], [3, 3, -66]],
+        mynt: [
+          ...rad(-3, 5, 3, 5, 1, 4), [0, 2, -14], [-3, 3.5, -20], [1, 5, -26],
+          ...rad(-5, -33, 5, -33, 3, 6), [0, 3, -50], [0, 3, -57],
+          ...rad(-5, -63, -5, -73, 1, 4), ...rad(5, -63, 5, -73, 1, 4),
+          [0, 2.5, -79], ...rad(-2, -86, 2, -86, 1, 3)
+        ],
+        fiender: [["ozi", -3, -34], ["ludde", 3, -42], ["ludde", 0, -64], ["ozi", -4, -70], ["ozi", 4, -72]],
+        mal: { typ: "flagga", x: 0, z: -90 }
+      },
+      {
+        namn: "Ozis borg", tema: "borg",
+        plattformar: [
+          P(0, 0, 12, 18, 0), P(0, -13, 4, 4, 0, "rorlig", 3), P(0, -23, 12, 12, 0),
+          P(0, -33, 3, 3, 1.5, "tra"), P(-3, -38, 3, 3, 3, "tra"), P(0, -43, 3, 3, 4.5, "tra"),
+          P(0, -54, 12, 14, 3), P(0, -65, 4, 4, 3, "rorlig", 4, 1), P(0, -72, 4, 4, 3, "rorlig", 4, -1),
+          P(0, -84, 16, 16, 1.5), P(0, -100, 10, 10, 3)
+        ],
+        block: [[-1, 6, -50], [0, 6, -50], [1, 6, -50], [-4, 4.5, -84], [4, 4.5, -84]],
+        mynt: [
+          ...rad(-3, 4, 3, 4, 1, 4), [0, 1.5, -13], ...rad(-4, -20, 4, -20, 1, 5),
+          [0, 2.5, -33], [-3, 4, -38], [0, 5.5, -43], ...rad(-4, -58, 4, -58, 4, 5),
+          [0, 4.5, -65], [0, 4.5, -72], ...rad(-6, -79, -6, -89, 2.5, 4), ...rad(6, -79, 6, -89, 2.5, 4)
+        ],
+        fiender: [["ludde", 0, -21], ["ozi", -3, -26], ["ozi", 0, -51], ["ludde", 3, -56], ["ozi", -3, -58],
+                  ["ludde", -4, -80], ["ludde", 4, -86], ["ozi", 0, -89]],
+        mal: { typ: "kung", x: 0, z: -101 }
+      }
+    ];
+
+    const TEMAN = {
+      ang:  { himmel: 0x87ceeb, ljus: 0.85, topp: "gras", sida: "jord",     kulle: 0x4ade80, dekor: "trad",   moln: true },
+      oken: { himmel: 0xffcf8a, ljus: 0.9,  topp: "sand", sida: "sandsten", kulle: 0xe9b872, dekor: "kaktus", moln: true },
+      borg: { himmel: 0x2a1630, ljus: 0.55, topp: "sten", sida: "tegel",    kulle: 0x3b2a3f, dekor: "fackla", moln: false, lava: true }
+    };
+
+    // =====================================================
+    // ===== LJUD OCH MUSIK (görs med kod, inga filer) =====
+    // =====================================================
+    let ljudCtx = null, huvudVolym, musikVolym, effektVolym, ljudPa = true, musik = null;
+
+    function startaLjud() {
+      if (!ljudCtx) {
+        ljudCtx = new (window.AudioContext || window.webkitAudioContext)();
+        huvudVolym = ljudCtx.createGain();
+        huvudVolym.connect(ljudCtx.destination);
+        musikVolym = ljudCtx.createGain();
+        musikVolym.gain.value = 0.35;
+        musikVolym.connect(huvudVolym);
+        effektVolym = ljudCtx.createGain();
+        effektVolym.gain.value = 0.6;
+        effektVolym.connect(huvudVolym);
+      }
+      ljudCtx.resume();
+    }
+
+    // Spela en ton. frekvens -> slutFrekvens under "tid" sekunder.
+    function ton(frekvens, slutFrekvens, tid, typ, volym, start = 0, mal = effektVolym) {
+      if (!ljudCtx) return;
+      const o = ljudCtx.createOscillator();
+      const g = ljudCtx.createGain();
+      const t = ljudCtx.currentTime + start;
+      o.type = typ;
+      o.frequency.setValueAtTime(frekvens, t);
+      if (slutFrekvens) o.frequency.exponentialRampToValueAtTime(slutFrekvens, t + tid);
+      g.gain.setValueAtTime(volym, t);
+      g.gain.exponentialRampToValueAtTime(0.001, t + tid);
+      o.connect(g).connect(mal);
+      o.start(t);
+      o.stop(t + tid + 0.05);
+    }
+    const midi = (n) => 440 * Math.pow(2, (n - 69) / 12);
+
+    const LJUD = {
+      hopp:    () => ton(260, 620, 0.16, "square", 0.18),
+      mynt:    () => { ton(1046, null, 0.07, "triangle", 0.35); ton(1568, null, 0.22, "triangle", 0.35, 0.06); },
+      trampa:  () => { ton(500, 80, 0.18, "square", 0.25); ton(120, 60, 0.12, "triangle", 0.4); },
+      block:   () => ton(140, 90, 0.12, "square", 0.3),
+      upptack: () => ton(700, 900, 0.1, "sawtooth", 0.08),
+      skada:   () => ton(440, 90, 0.45, "sawtooth", 0.25),
+      ramla:   () => ton(800, 100, 0.7, "triangle", 0.3),
+      klar:    () => [60, 64, 67, 72, 76, 79].forEach((n, i) => ton(midi(n + 12), null, 0.2, "square", 0.15, i * 0.1)),
+      vinst:   () => [72, 76, 79, 84, 79, 84, 88].forEach((n, i) => ton(midi(n), null, 0.3, "square", 0.15, i * 0.14)),
+      forlust: () => [67, 63, 60, 55].forEach((n, i) => ton(midi(n), null, 0.35, "triangle", 0.3, i * 0.25))
+    };
+    function spelaLjud(namn) { if (ljudCtx) LJUD[namn](); }
+
+    // Egen musik. Varje siffra är en ton (60 = C), null = paus.
+    const MUSIK = {
+      ang: {
+        takt: 0.13,
+        noter: [72, null, 76, 79, 76, null, 72, 74, 76, 74, 72, null, 67, null, 69, 71,
+                72, null, 76, 79, 81, null, 79, 76, 77, 76, 74, null, 72, null, null, null],
+        bas: [48, 55, 48, 55, 53, 60, 53, 60, 48, 55, 48, 55, 43, 50, 48, null]
+      },
+      oken: {
+        takt: 0.14,
+        noter: [69, 72, 74, null, 76, 74, 72, null, 69, 72, 74, 76, 79, null, 76, null,
+                74, 72, 69, null, 72, 69, 67, null, 69, null, 72, 69, 69, null, null, null],
+        bas: [45, 52, 45, 52, 50, 57, 50, 57, 45, 52, 43, 50, 45, 52, 45, null]
+      },
+      borg: {
+        takt: 0.15,
+        noter: [69, null, 72, 76, 75, null, 72, 69, 71, 72, 71, null, 64, null, 66, 68,
+                69, null, 72, 76, 77, null, 76, 72, 74, 72, 71, null, 69, null, null, null],
+        bas: [45, 52, 45, 52, 41, 48, 41, 48, 40, 47, 40, 47, 45, 52, 45, null]
+      }
+    };
+
+    function startaMusik(tema) {
+      if (!ljudCtx) return;
+      musik = { ...MUSIK[tema], i: 0, nasta: ljudCtx.currentTime + 0.2 };
+    }
+    function stoppaMusik() { musik = null; }
+
+    setInterval(() => {
+      if (!musik || !ljudCtx) return;
+      while (musik.nasta < ljudCtx.currentTime + 0.3) {
+        const start = musik.nasta - ljudCtx.currentTime;
+        const n = musik.noter[musik.i % musik.noter.length];
+        if (n) ton(midi(n), null, musik.takt * 0.9, "square", 0.07, start, musikVolym);
+        if (musik.i % 2 === 0) {
+          const b = musik.bas[(musik.i / 2) % musik.bas.length];
+          if (b) ton(midi(b), null, musik.takt * 1.8, "triangle", 0.22, start, musikVolym);
+        }
+        musik.nasta += musik.takt;
+        musik.i++;
+      }
+    }, 100);
+
+    function vaxlaLjud() {
+      ljudPa = !ljudPa;
+      if (huvudVolym) huvudVolym.gain.value = ljudPa ? 1 : 0;
+      $("ljudKnapp").textContent = ljudPa ? "🔊" : "🔇";
+    }
+
+    // =====================================================
+    // ===== 3D-VÄRLDEN ====================================
+    // =====================================================
+    const $ = (id) => document.getElementById(id);
     const scen = new THREE.Scene();
-    scen.background = new THREE.Color(0x87ceeb);
-    scen.fog = new THREE.Fog(0x87ceeb, 30, 90);
-
-    const kamera = new THREE.PerspectiveCamera(60, innerWidth / innerHeight, 0.1, 200);
+    const kamera = new THREE.PerspectiveCamera(60, innerWidth / innerHeight, 0.1, 250);
     const ritare = new THREE.WebGLRenderer({ antialias: true });
     ritare.setSize(innerWidth, innerHeight);
-    ritare.setPixelRatio(Math.min(devicePixelRatio, 2));
+    ritare.setPixelRatio(Math.min(devicePixelRatio, 1.5));
+    ritare.shadowMap.enabled = true;
+    ritare.shadowMap.type = THREE.PCFSoftShadowMap;
     document.body.prepend(ritare.domElement);
 
-    scen.add(new THREE.HemisphereLight(0xffffff, 0x446622, 0.8));
-    const sol = new THREE.DirectionalLight(0xffffff, 0.7);
-    sol.position.set(10, 20, 10);
-    scen.add(sol);
+    const himmelsljus = new THREE.HemisphereLight(0xffffff, 0x556633, 0.8);
+    scen.add(himmelsljus);
+    const sol = new THREE.DirectionalLight(0xffffff, 0.75);
+    sol.castShadow = true;
+    sol.shadow.mapSize.set(1024, 1024);
+    Object.assign(sol.shadow.camera, { left: -18, right: 18, top: 18, bottom: -18, near: 1, far: 60 });
+    scen.add(sol, sol.target);
 
     addEventListener("resize", () => {
       kamera.aspect = innerWidth / innerHeight;
@@ -165,94 +422,656 @@
       ritare.setSize(innerWidth, innerHeight);
     });
 
-    // ===== Hjälp-funktioner för att bygga figurer =====
-    function del(form, farg, x, y, z, grupp) {
-      const m = new THREE.Mesh(form, new THREE.MeshLambertMaterial({ color: farg }));
+    // ===== Texturer (mönster) ritas med kod =====
+    function textur(rita, storlek = 64) {
+      const c = document.createElement("canvas");
+      c.width = c.height = storlek;
+      rita(c.getContext("2d"), storlek);
+      const t = new THREE.CanvasTexture(c);
+      t.wrapS = t.wrapT = THREE.RepeatWrapping;
+      t.magFilter = THREE.NearestFilter;
+      return t;
+    }
+    const prickar = (bas, farger, antal) => (x, s) => {
+      x.fillStyle = bas;
+      x.fillRect(0, 0, s, s);
+      for (let i = 0; i < antal; i++) {
+        x.fillStyle = farger[i % farger.length];
+        x.fillRect(Math.random() * s | 0, Math.random() * s | 0, 4, 4);
+      }
+    };
+    const tegel = (bas, fog) => (x, s) => {
+      x.fillStyle = fog;
+      x.fillRect(0, 0, s, s);
+      x.fillStyle = bas;
+      for (let r = 0; r < 4; r++) {
+        for (let k = -1; k < 2; k++) {
+          x.fillRect(k * 32 + (r % 2) * 16 + 2, r * 16 + 2, 28, 12);
+        }
+      }
+    };
+    const TEXTURER = {
+      gras: textur(prickar("#4caf50", ["#43a047", "#66bb6a", "#388e3c"], 140)),
+      jord: textur(prickar("#8d5a2b", ["#7a4a22", "#a0693a", "#6d4220"], 120)),
+      sand: textur(prickar("#e9c46a", ["#f4d58d", "#d4a849", "#e0b85c"], 140)),
+      sandsten: textur(tegel("#d4a24c", "#a8772f")),
+      sten: textur(prickar("#8a8a93", ["#77777f", "#9b9ba5", "#6b6b73"], 140)),
+      tegel: textur(tegel("#5b5566", "#2e2a35")),
+      tra: textur((x, s) => {
+        x.fillStyle = "#b7793a";
+        x.fillRect(0, 0, s, s);
+        x.fillStyle = "#8a5526";
+        for (let i = 0; i < 4; i++) x.fillRect(0, i * 16, s, 2);
+        x.fillRect(20, 0, 2, 16); x.fillRect(44, 16, 2, 16); x.fillRect(12, 32, 2, 16); x.fillRect(50, 48, 2, 16);
+      }),
+      block: textur((x, s) => {
+        x.fillStyle = "#f5b301"; x.fillRect(0, 0, s, s);
+        x.strokeStyle = "#a35f00"; x.lineWidth = 6; x.strokeRect(3, 3, s - 6, s - 6);
+        x.fillStyle = "#a35f00";
+        [[8, 8], [52, 8], [8, 52], [52, 52]].forEach(([a, b]) => x.fillRect(a, b, 4, 4));
+        x.font = "bold 44px sans-serif"; x.textAlign = "center"; x.textBaseline = "middle";
+        x.fillStyle = "#7a4500"; x.fillText("?", 34, 36);
+        x.fillStyle = "#fff"; x.fillText("?", 32, 33);
+      }),
+      tomtBlock: textur((x, s) => {
+        x.fillStyle = "#8d5a2b"; x.fillRect(0, 0, s, s);
+        x.strokeStyle = "#5c3a1a"; x.lineWidth = 6; x.strokeRect(3, 3, s - 6, s - 6);
+        x.fillStyle = "#5c3a1a";
+        [[8, 8], [52, 8], [8, 52], [52, 52]].forEach(([a, b]) => x.fillRect(a, b, 4, 4));
+      })
+    };
+    function texturMaterial(namn, rx, ry, farg = 0xffffff) {
+      const t = TEXTURER[namn].clone();
+      t.needsUpdate = true;
+      t.repeat.set(rx, ry);
+      return new THREE.MeshLambertMaterial({ map: t, color: farg });
+    }
+
+    // ===== Hjälp-funktion: gör en 3D-del =====
+    function del(form, farg, x, y, z, foralder, platt = false) {
+      const mat = platt
+        ? new THREE.MeshPhongMaterial({ color: farg, flatShading: true, shininess: 10 })
+        : new THREE.MeshLambertMaterial({ color: farg });
+      const m = new THREE.Mesh(form, mat);
       m.position.set(x, y, z);
-      grupp.add(m);
+      m.castShadow = true;
+      m.receiveShadow = true;
+      foralder.add(m);
       return m;
     }
 
+    // =====================================================
+    // ===== FIGURER =======================================
+    // =====================================================
     function byggHjalte(typ) {
       const h = HJALTAR[typ];
-      const g = new THREE.Group();
-      // Ben
-      del(new THREE.BoxGeometry(0.2, 0.5, 0.2), 0x333333, -0.15, 0.25, 0, g);
-      del(new THREE.BoxGeometry(0.2, 0.5, 0.2), 0x333333, 0.15, 0.25, 0, g);
-      // Kropp
-      del(new THREE.CylinderGeometry(0.35, 0.4, 0.7, 12), h.kropp, 0, 0.85, 0, g);
-      // Huvud och ögon
-      del(new THREE.SphereGeometry(0.32, 16, 12), HUD_FARG, 0, 1.45, 0, g);
-      del(new THREE.SphereGeometry(0.06, 8, 6), 0x000000, -0.11, 1.5, 0.28, g);
-      del(new THREE.SphereGeometry(0.06, 8, 6), 0x000000, 0.11, 1.5, 0.28, g);
-      if (typ === "mustafa") {
-        // Pannband
-        del(new THREE.CylinderGeometry(0.34, 0.34, 0.1, 16), h.detalj, 0, 1.6, 0, g);
-      } else {
-        // Krona och mantel
-        del(new THREE.CylinderGeometry(0.25, 0.22, 0.2, 8), h.detalj, 0, 1.82, 0, g);
-        del(new THREE.BoxGeometry(0.7, 0.9, 0.05), 0xdc2626, 0, 0.9, -0.4, g);
+      const grupp = new THREE.Group();
+      const kropp = new THREE.Group();
+      grupp.add(kropp);
+
+      // Ben med skor (leden sitter vid höften så benen kan svänga)
+      const ben = [-1, 1].map((s) => {
+        const led = new THREE.Group();
+        led.position.set(0.14 * s, 0.62, 0);
+        kropp.add(led);
+        del(new THREE.CapsuleGeometry(0.1, 0.3, 4, 8), h.byxor, 0, -0.25, 0, led);
+        const sko = del(new THREE.SphereGeometry(0.14, 10, 8), 0x3b2412, 0, -0.52, 0.06, led);
+        sko.scale.set(1, 0.6, 1.4);
+        return led;
+      });
+
+      // Kropp och bälte
+      del(new THREE.CapsuleGeometry(0.28, 0.3, 6, 12), h.troja, 0, 0.92, 0, kropp);
+      del(new THREE.CylinderGeometry(0.3, 0.3, 0.1, 14), 0x222222, 0, 0.72, 0, kropp);
+      del(new THREE.BoxGeometry(0.12, 0.1, 0.05), 0xfacc15, 0, 0.72, 0.29, kropp);
+
+      // Armar (leden sitter vid axeln)
+      const armar = [-1, 1].map((s) => {
+        const led = new THREE.Group();
+        led.position.set(0.36 * s, 1.1, 0);
+        kropp.add(led);
+        del(new THREE.CapsuleGeometry(0.08, 0.26, 4, 8), h.troja, 0, -0.2, 0, led);
+        del(new THREE.SphereGeometry(0.09, 8, 6), HUD_FARG, 0, -0.42, 0, led);
+        return led;
+      });
+
+      // Huvud
+      const huvud = new THREE.Group();
+      huvud.position.set(0, 1.45, 0);
+      kropp.add(huvud);
+      del(new THREE.SphereGeometry(0.3, 18, 14), HUD_FARG, 0, 0, 0, huvud);
+      del(new THREE.SphereGeometry(0.07, 8, 6), 0xb5733a, 0, -0.02, 0.3, huvud); // näsa
+      for (const s of [-1, 1]) {
+        del(new THREE.SphereGeometry(0.07, 8, 6), 0xffffff, 0.1 * s, 0.07, 0.25, huvud);
+        del(new THREE.SphereGeometry(0.04, 8, 6), 0x111111, 0.1 * s, 0.07, 0.31, huvud);
       }
-      return g;
+      // Hår
+      del(new THREE.SphereGeometry(0.31, 16, 8, 0, Math.PI * 2, 0, Math.PI * 0.38), 0x2b1b0e, 0, 0.01, -0.01, huvud);
+
+      let mantel = null;
+      if (typ === "mustafa") {
+        // Pannband med två band som fladdrar bak
+        const band = del(new THREE.TorusGeometry(0.3, 0.045, 8, 24), h.detalj, 0, 0.13, 0, huvud);
+        band.rotation.x = Math.PI / 2;
+        del(new THREE.BoxGeometry(0.06, 0.22, 0.04), h.detalj, -0.06, 0.02, -0.32, huvud).rotation.z = 0.3;
+        del(new THREE.BoxGeometry(0.06, 0.22, 0.04), h.detalj, 0.06, 0.02, -0.32, huvud).rotation.z = -0.3;
+      } else {
+        // Krona med spetsar och en röd sten
+        del(new THREE.CylinderGeometry(0.22, 0.2, 0.14, 10, 1, true), h.detalj, 0, 0.3, 0, huvud);
+        for (let i = 0; i < 5; i++) {
+          const v = (i / 5) * Math.PI * 2;
+          del(new THREE.ConeGeometry(0.05, 0.14, 6), h.detalj, Math.sin(v) * 0.2, 0.43, Math.cos(v) * 0.2, huvud);
+        }
+        del(new THREE.SphereGeometry(0.04, 8, 6), 0xdc2626, 0, 0.3, 0.22, huvud);
+        // Mantel som hänger från axlarna
+        mantel = new THREE.Group();
+        mantel.position.set(0, 1.25, -0.27);
+        kropp.add(mantel);
+        del(new THREE.BoxGeometry(0.6, 0.85, 0.04), 0xdc2626, 0, -0.42, 0, mantel);
+      }
+      return { grupp, kropp, ben, armar, mantel };
     }
 
     function byggOzi() {
-      // Grön taggboll med ett stort öga
+      // Grön taggboll med ett stort argt öga
       const g = new THREE.Group();
-      del(new THREE.SphereGeometry(0.55, 16, 12), 0x16a34a, 0, 0.55, 0, g);
-      for (let i = 0; i < 3; i++) {
-        const tagg = del(new THREE.ConeGeometry(0.12, 0.4, 8), 0x14532d, (i - 1) * 0.3, 1.15, 0, g);
-        tagg.rotation.z = -(i - 1) * 0.4;
+      const kropp = new THREE.Group();
+      g.add(kropp);
+      del(new THREE.IcosahedronGeometry(0.55, 1), 0x22c55e, 0, 0.62, 0, kropp, true);
+      const upp = new THREE.Vector3(0, 1, 0);
+      const riktningar = [[0, 1, 0], [0.7, 0.7, 0], [-0.7, 0.7, 0], [0, 0.7, -0.7], [0.6, 0.3, -0.6],
+                          [-0.6, 0.3, -0.6], [0.9, 0.1, 0.2], [-0.9, 0.1, 0.2], [0, 0.3, -0.95]];
+      for (const r of riktningar) {
+        const v = new THREE.Vector3(...r).normalize();
+        const tagg = del(new THREE.ConeGeometry(0.11, 0.35, 6), 0x14532d, v.x * 0.6, 0.62 + v.y * 0.6, v.z * 0.6, kropp, true);
+        tagg.quaternion.setFromUnitVectors(upp, v);
       }
-      del(new THREE.SphereGeometry(0.22, 12, 8), 0xffffff, 0, 0.65, 0.42, g);
-      del(new THREE.SphereGeometry(0.1, 8, 6), 0x000000, 0, 0.65, 0.62, g);
-      return g;
+      del(new THREE.SphereGeometry(0.24, 14, 10), 0xffffff, 0, 0.7, 0.4, kropp);
+      del(new THREE.SphereGeometry(0.11, 10, 8), 0x111111, 0, 0.7, 0.6, kropp);
+      const ogonbryn = del(new THREE.BoxGeometry(0.4, 0.07, 0.07), 0x052e16, 0, 0.95, 0.5, kropp);
+      ogonbryn.rotation.z = 0.25;
+      for (const s of [-1, 1]) {
+        const fot = del(new THREE.SphereGeometry(0.16, 8, 6), 0x14532d, 0.25 * s, 0.1, 0.1, kropp);
+        fot.scale.set(1, 0.6, 1.3);
+      }
+      return { g, kropp };
     }
 
     function byggLudde() {
-      // Lila låda med horn
+      // Lila monster med horn, arga ögon och tänder
       const g = new THREE.Group();
-      del(new THREE.BoxGeometry(1, 0.9, 1), 0x9333ea, 0, 0.6, 0, g);
-      del(new THREE.ConeGeometry(0.12, 0.4, 8), 0xfef3c7, -0.3, 1.25, 0, g);
-      del(new THREE.ConeGeometry(0.12, 0.4, 8), 0xfef3c7, 0.3, 1.25, 0, g);
-      del(new THREE.SphereGeometry(0.14, 8, 6), 0xffffff, -0.22, 0.75, 0.5, g);
-      del(new THREE.SphereGeometry(0.14, 8, 6), 0xffffff, 0.22, 0.75, 0.5, g);
-      del(new THREE.SphereGeometry(0.06, 8, 6), 0x000000, -0.22, 0.75, 0.62, g);
-      del(new THREE.SphereGeometry(0.06, 8, 6), 0x000000, 0.22, 0.75, 0.62, g);
-      del(new THREE.BoxGeometry(0.3, 0.15, 0.4), 0x3b0764, -0.25, 0.08, 0, g);
-      del(new THREE.BoxGeometry(0.3, 0.15, 0.4), 0x3b0764, 0.25, 0.08, 0, g);
+      const kropp = new THREE.Group();
+      g.add(kropp);
+      del(new THREE.BoxGeometry(1, 0.9, 0.9), 0x9333ea, 0, 0.65, 0, kropp);
+      del(new THREE.BoxGeometry(0.6, 0.45, 0.05), 0xd8b4fe, 0, 0.5, 0.46, kropp); // mage
+      for (const s of [-1, 1]) {
+        const horn = del(new THREE.ConeGeometry(0.11, 0.42, 8), 0xfef3c7, 0.32 * s, 1.27, 0, kropp);
+        horn.rotation.z = -0.35 * s;
+        del(new THREE.SphereGeometry(0.14, 10, 8), 0xffffff, 0.22 * s, 0.85, 0.42, kropp);
+        del(new THREE.SphereGeometry(0.065, 8, 6), 0x111111, 0.22 * s, 0.85, 0.55, kropp);
+        const bryn = del(new THREE.BoxGeometry(0.25, 0.06, 0.06), 0x3b0764, 0.22 * s, 1.02, 0.46, kropp);
+        bryn.rotation.z = 0.35 * s;
+        del(new THREE.BoxGeometry(0.32, 0.18, 0.45), 0x3b0764, 0.26 * s, 0.09, 0.05, kropp); // fot
+      }
+      for (let i = -1; i <= 1; i++) {
+        const tand = del(new THREE.ConeGeometry(0.05, 0.12, 4), 0xffffff, i * 0.12, 0.6, 0.47, kropp);
+        tand.rotation.x = Math.PI;
+      }
+      return { g, kropp };
+    }
+
+    function byggFlagga() {
+      const g = new THREE.Group();
+      del(new THREE.BoxGeometry(0.8, 0.4, 0.8), 0x6b7280, 0, 0.2, 0, g);
+      del(new THREE.CylinderGeometry(0.06, 0.06, 4.2, 8), 0xe5e7eb, 0, 2.3, 0, g);
+      del(new THREE.SphereGeometry(0.15, 10, 8), 0xfacc15, 0, 4.45, 0, g);
+      const form = new THREE.Shape();
+      form.moveTo(0, 0); form.lineTo(1.3, -0.45); form.lineTo(0, -0.9);
+      const flagga = new THREE.Mesh(new THREE.ShapeGeometry(form),
+        new THREE.MeshLambertMaterial({ color: 0x22c55e, side: THREE.DoubleSide }));
+      flagga.position.set(0.06, 4.2, 0);
+      g.add(flagga);
       return g;
     }
 
     function byggBurMedKung() {
       const g = new THREE.Group();
-      // Kung Hussein
-      del(new THREE.CylinderGeometry(0.4, 0.5, 0.9, 12), 0xb91c1c, 0, 0.65, 0, g);
-      del(new THREE.SphereGeometry(0.32, 16, 12), HUD_FARG, 0, 1.4, 0, g);
-      del(new THREE.SphereGeometry(0.2, 10, 8), 0xffffff, 0, 1.25, 0.2, g); // skägg
-      del(new THREE.CylinderGeometry(0.3, 0.26, 0.3, 8), 0xfacc15, 0, 1.8, 0, g); // krona
-      // Buren
-      for (let i = 0; i < 12; i++) {
-        const v = (i / 12) * Math.PI * 2;
-        del(new THREE.CylinderGeometry(0.05, 0.05, 2.4, 6), 0x555555,
-            Math.sin(v) * 1.1, 1.2, Math.cos(v) * 1.1, g);
+      const kung = new THREE.Group();
+      g.add(kung);
+      del(new THREE.CapsuleGeometry(0.4, 0.5, 6, 12), 0xb91c1c, 0, 0.75, 0, kung);
+      const krage = del(new THREE.TorusGeometry(0.33, 0.09, 8, 16), 0xffffff, 0, 1.15, 0, kung);
+      krage.rotation.x = Math.PI / 2;
+      del(new THREE.SphereGeometry(0.3, 16, 12), HUD_FARG, 0, 1.5, 0, kung);
+      del(new THREE.SphereGeometry(0.2, 10, 8), 0xf5f5f5, 0, 1.35, 0.18, kung); // skägg
+      for (const s of [-1, 1]) del(new THREE.SphereGeometry(0.05, 8, 6), 0x111111, 0.1 * s, 1.57, 0.26, kung);
+      del(new THREE.CylinderGeometry(0.26, 0.24, 0.2, 10, 1, true), 0xfacc15, 0, 1.85, 0, kung);
+      for (let i = 0; i < 6; i++) {
+        const v = (i / 6) * Math.PI * 2;
+        del(new THREE.ConeGeometry(0.06, 0.18, 6), 0xfacc15, Math.sin(v) * 0.24, 2.03, Math.cos(v) * 0.24, kung);
       }
-      del(new THREE.CylinderGeometry(1.2, 1.2, 0.15, 16), 0x444444, 0, 2.45, 0, g);
-      del(new THREE.CylinderGeometry(1.2, 1.2, 0.1, 16), 0x444444, 0, 0.05, 0, g);
+      for (let i = 0; i < 14; i++) {
+        const v = (i / 14) * Math.PI * 2;
+        del(new THREE.CylinderGeometry(0.05, 0.05, 2.6, 6), 0x52525b, Math.sin(v) * 1.15, 1.3, Math.cos(v) * 1.15, g);
+      }
+      del(new THREE.CylinderGeometry(1.25, 1.25, 0.15, 20), 0x3f3f46, 0, 2.6, 0, g);
+      del(new THREE.SphereGeometry(1.25, 20, 8, 0, Math.PI * 2, 0, Math.PI / 2), 0x3f3f46, 0, 2.6, 0, g).scale.y = 0.35;
+      del(new THREE.CylinderGeometry(1.25, 1.25, 0.12, 20), 0x3f3f46, 0, 0.06, 0, g);
+      return { g, kung };
+    }
+
+    function byggDekor(typ, x, y, z, foralder) {
+      const g = new THREE.Group();
+      g.position.set(x, y, z);
+      foralder.add(g);
+      if (typ === "trad") {
+        del(new THREE.CylinderGeometry(0.2, 0.28, 1.6, 8), 0x7c4a1e, 0, 0.8, 0, g);
+        del(new THREE.IcosahedronGeometry(1.1, 0), 0x16a34a, 0, 2.1, 0, g, true);
+        del(new THREE.IcosahedronGeometry(0.75, 0), 0x22c55e, 0.2, 2.9, 0.1, g, true);
+      } else if (typ === "kaktus") {
+        del(new THREE.CapsuleGeometry(0.28, 1.6, 4, 10), 0x15803d, 0, 1.1, 0, g);
+        del(new THREE.CapsuleGeometry(0.16, 0.6, 4, 8), 0x15803d, 0.45, 1.3, 0, g);
+        del(new THREE.CapsuleGeometry(0.16, 0.5, 4, 8), 0x15803d, -0.45, 1.0, 0, g);
+        del(new THREE.CapsuleGeometry(0.15, 0.2, 4, 8), 0x15803d, 0.3, 0.95, 0, g).rotation.z = Math.PI / 2;
+        del(new THREE.CapsuleGeometry(0.15, 0.2, 4, 8), 0x15803d, -0.3, 0.75, 0, g).rotation.z = Math.PI / 2;
+      } else {
+        del(new THREE.BoxGeometry(0.8, 3, 0.8), 0x4b4453, 0, 1.5, 0, g);
+        del(new THREE.BoxGeometry(1, 0.25, 1), 0x3b3542, 0, 3.1, 0, g);
+        const eld = new THREE.Mesh(new THREE.ConeGeometry(0.25, 0.7, 8), new THREE.MeshBasicMaterial({ color: 0xff8c00 }));
+        eld.position.set(0, 3.55, 0);
+        g.add(eld);
+        const karna = new THREE.Mesh(new THREE.SphereGeometry(0.15, 8, 6), new THREE.MeshBasicMaterial({ color: 0xffef7a }));
+        karna.position.set(0, 3.35, 0);
+        g.add(karna);
+      }
       return g;
     }
 
-    // ===== Banan =====
-    const plattformar = [];
-    // rorelse = hur långt plattformen åker åt sidan (0 = står still)
-    function plattform(x, z, bredd, djup, topp, farg = 0x4ade80, tjocklek = 4, rorelse = 0) {
-      const figur = del(new THREE.BoxGeometry(bredd, tjocklek, djup), farg, x, topp - tjocklek / 2, z, scen);
+    // Ett rött "!" som visas när en fiende ser dig
+    const alarmTextur = textur((x, s) => {
+      x.font = "bold 56px sans-serif"; x.textAlign = "center"; x.textBaseline = "middle";
+      x.fillStyle = "#000"; x.fillText("!", 34, 35);
+      x.fillStyle = "#ef4444"; x.fillText("!", 32, 32);
+    });
+
+    // =====================================================
+    // ===== BYGG EN BANA ==================================
+    // =====================================================
+    let banGrupp = null, banNr = 0, bana = null, tema = null;
+    let plattformar = [], fiender = [], mynt = [], block = [], partiklar = [];
+    let mal = null, malFigur = null;
+    const myntForm = new THREE.CylinderGeometry(0.32, 0.32, 0.08, 20);
+    const myntMaterial = new THREE.MeshPhongMaterial({ color: 0xfacc15, emissive: 0x6b4a00, shininess: 90 });
+    const blockForm = new THREE.BoxGeometry(1, 1, 1);
+    const blockMaterial = new THREE.MeshLambertMaterial({ map: TEXTURER.block });
+    const tomtMaterial = new THREE.MeshLambertMaterial({ map: TEXTURER.tomtBlock });
+    const gnistForm = new THREE.BoxGeometry(0.12, 0.12, 0.12);
+
+    function byggPlattform(d) {
+      const g = new THREE.Group();
+      g.position.set(d.x, d.topp, d.z);
+      banGrupp.add(g);
+      let tjocklek;
+      if (d.typ === "mark") {
+        tjocklek = 6;
+        const topp = new THREE.Mesh(new THREE.BoxGeometry(d.w, 0.4, d.d), texturMaterial(tema.topp, d.w / 2, d.d / 2));
+        topp.position.y = -0.2;
+        const sida = new THREE.Mesh(new THREE.BoxGeometry(d.w - 0.1, tjocklek - 0.4, d.d - 0.1),
+          texturMaterial(tema.sida, Math.max(d.w, d.d) / 2, (tjocklek - 0.4) / 2));
+        sida.position.y = -0.4 - (tjocklek - 0.4) / 2;
+        for (const m of [topp, sida]) { m.receiveShadow = true; m.castShadow = true; g.add(m); }
+      } else {
+        tjocklek = 0.6;
+        const farg = d.typ === "rorlig" ? 0x7dd3fc : 0xffffff;
+        const m = new THREE.Mesh(new THREE.BoxGeometry(d.w, tjocklek, d.d), texturMaterial("tra", d.w / 2, 1, farg));
+        m.position.y = -tjocklek / 2;
+        m.receiveShadow = true;
+        m.castShadow = true;
+        g.add(m);
+      }
       plattformar.push({
-        figur, startX: x, bredd, rorelse, fart: 0.05, riktning: 1, flyttX: 0,
-        minX: x - bredd / 2, maxX: x + bredd / 2,
-        minZ: z - djup / 2,  maxZ: z + djup / 2,
-        topp: topp, botten: topp - tjocklek
+        figur: g, startX: d.x, bredd: d.w, rorelse: d.rorelse, fart: 0.05, riktning: d.riktning, flyttX: 0,
+        typ: d.typ,
+        minX: d.x - d.w / 2, maxX: d.x + d.w / 2,
+        minZ: d.z - d.d / 2, maxZ: d.z + d.d / 2,
+        topp: d.topp, botten: d.topp - tjocklek
       });
+    }
+
+    function byggBlock([x, y, z]) {
+      const m = new THREE.Mesh(blockForm, blockMaterial);
+      m.position.set(x, y, z);
+      m.castShadow = true;
+      m.receiveShadow = true;
+      banGrupp.add(m);
+      const b = { m, y, anvand: false, bump: 0 };
+      block.push(b);
+      plattformar.push({
+        block: b, rorelse: 0, flyttX: 0,
+        minX: x - 0.5, maxX: x + 0.5, minZ: z - 0.5, maxZ: z + 0.5, topp: y + 0.5, botten: y - 0.5
+      });
+    }
+
+    function skapaMynt(x, y, z, samlad = false) {
+      const m = new THREE.Mesh(myntForm, myntMaterial);
+      m.rotation.order = "YXZ";
+      m.rotation.x = Math.PI / 2; // står upp som ett riktigt mynt
+      m.position.set(x, y, z);
+      m.castShadow = true;
+      banGrupp.add(m);
+      const nytt = { m, x, y, z, samlad, anim: samlad ? 30 : 0 };
+      mynt.push(nytt);
+      return nytt;
+    }
+
+    function skapaFiende([typ, x, z, vidd = 3]) {
+      const p = plattformar.find((p) => !p.rorelse && !p.block &&
+        x >= p.minX && x <= p.maxX && z >= p.minZ && z <= p.maxZ);
+      const { g, kropp } = typ === "ozi" ? byggOzi() : byggLudde();
+      const alarm = new THREE.Sprite(new THREE.SpriteMaterial({ map: alarmTextur }));
+      alarm.scale.set(0.8, 0.8, 0.8);
+      alarm.position.y = 2;
+      alarm.visible = false;
+      g.add(alarm);
+      banGrupp.add(g);
+      fiender.push({
+        typ, figur: g, kropp, alarm, x, z, y: p.topp, startX: x, vidd,
+        min: { x: p.minX + 0.6, z: p.minZ + 0.6 }, max: { x: p.maxX - 0.6, z: p.maxZ - 0.6 },
+        riktning: 1, vinkel: 0, jakt: false, hoppY: 0, hoppV: 0, hoppPaus: 30,
+        dod: 0, levande: true, tid: Math.random() * 10, radie: 0.6, hojd: 1.2
+      });
+    }
+
+    function laddaBana(nr) {
+      if (banGrupp) scen.remove(banGrupp);
+      banGrupp = new THREE.Group();
+      scen.add(banGrupp);
+      banNr = nr;
+      bana = BANOR[nr];
+      tema = TEMAN[bana.tema];
+      plattformar = []; fiender = []; mynt = []; block = []; partiklar = [];
+
+      scen.background = new THREE.Color(tema.himmel);
+      scen.fog = new THREE.Fog(tema.himmel, 35, 110);
+      himmelsljus.intensity = tema.ljus;
+      sol.color.set(tema.lava ? 0xffa060 : 0xffffff);
+
+      bana.plattformar.forEach(byggPlattform);
+      bana.block.forEach(byggBlock);
+      bana.mynt.forEach(([x, y, z]) => skapaMynt(x, y, z));
+      bana.fiender.forEach(skapaFiende);
+
+      // Mål: flagga eller kungens bur
+      const malPlattform = plattformar.find((p) => !p.block &&
+        bana.mal.x >= p.minX && bana.mal.x <= p.maxX && bana.mal.z >= p.minZ && bana.mal.z <= p.maxZ);
+      mal = { ...bana.mal, y: malPlattform.topp };
+      malFigur = mal.typ === "flagga" ? { g: byggFlagga() } : byggBurMedKung();
+      malFigur.g.position.set(mal.x, mal.y, mal.z);
+      banGrupp.add(malFigur.g);
+
+      // Dekor på de stora markerna
+      bana.plattformar.forEach((d, i) => {
+        if (d.typ !== "mark" || d.w < 10) return;
+        for (const sx of [-1, 1]) {
+          // Inget framme på första marken, då skymmer det kameran
+          if (i > 0) byggDekor(tema.dekor, d.x + sx * (d.w / 2 - 1), d.topp, d.z + d.d / 2 - 1.2, banGrupp);
+          byggDekor(tema.dekor, d.x - sx * (d.w / 2 - 1), d.topp, d.z - d.d / 2 + 1.2, banGrupp);
+        }
+      });
+
+      // Kullar långt bort
+      const slutZ = Math.min(...bana.plattformar.map((d) => d.z));
+      for (let z = 20; z > slutZ - 40; z -= 18) {
+        for (const sx of [-1, 1]) {
+          const x = sx * (38 + Math.random() * 15);
+          if (tema.lava) {
+            del(new THREE.ConeGeometry(8 + Math.random() * 5, 18 + Math.random() * 10, 6), tema.kulle, x, 0, z, banGrupp, true);
+          } else {
+            del(new THREE.SphereGeometry(12 + Math.random() * 6, 16, 10), tema.kulle, x, -8, z, banGrupp).castShadow = false;
+          }
+        }
+      }
+
+      // Moln
+      if (tema.moln) {
+        for (let z = 10; z > slutZ - 30; z -= 12) {
+          const moln = new THREE.Group();
+          moln.position.set((Math.random() - 0.5) * 50, 14 + Math.random() * 6, z);
+          for (let i = 0; i < 3; i++) {
+            const m = new THREE.Mesh(new THREE.SphereGeometry(1.4 - i * 0.2, 10, 8),
+              new THREE.MeshLambertMaterial({ color: 0xffffff, emissive: 0x444444 }));
+            m.position.set(i * 1.3 - 1.3, i === 1 ? 0.5 : 0, 0);
+            moln.add(m);
+          }
+          banGrupp.add(moln);
+        }
+      }
+
+      // Lava i borgen
+      if (tema.lava) {
+        const lava = new THREE.Mesh(new THREE.PlaneGeometry(400, 400), new THREE.MeshBasicMaterial({ color: 0xff4500 }));
+        lava.rotation.x = -Math.PI / 2;
+        lava.position.set(0, -6, -60);
+        banGrupp.add(lava);
+      }
+
+      const forsta = bana.plattformar[0];
+      startPunkt = { x: forsta.x, y: forsta.topp, z: forsta.z + forsta.d / 2 - 3 };
+      tillbakaTillStart();
+      kamera.position.set(startPunkt.x, startPunkt.y + 6, startPunkt.z + 11);
+      kameraTitt.set(startPunkt.x, startPunkt.y + 1, startPunkt.z - 3);
+      visaBanTitel("Bana " + (nr + 1) + ": " + bana.namn);
+      startaMusik(bana.tema);
+    }
+
+    function visaBanTitel(text) {
+      const t = $("banTitel");
+      t.textContent = text;
+      t.style.opacity = 1;
+      clearTimeout(visaBanTitel.timer);
+      visaBanTitel.timer = setTimeout(() => (t.style.opacity = 0), 2200);
+    }
+
+    // =====================================================
+    // ===== SPELETS LÄGE ==================================
+    // =====================================================
+    const BREDD = 0.35, HOJD = 1.75;
+    const spelare = { x: 0, y: 0, z: 0, vx: 0, vz: 0, fartY: 0, paMarken: false, riktning: Math.PI,
+                      coyote: 0, hoppBuffer: 0, skyddad: 0, animTid: 0, squash: 1 };
+    let startPunkt = { x: 0, y: 0, z: 0 };
+    let figur = null, valdHjalte = "mustafa", valdSvar = "medel", S = SVARIGHETER.medel;
+    let liv = 3, poang = 0, besegrade = 0, underlag = null;
+    let lage = "meny"; // "meny", "spelar", "mellan" eller "slut"
+    const kameraMal = new THREE.Vector3();
+    const kameraTitt = new THREE.Vector3();
+
+    function tillbakaTillStart() {
+      Object.assign(spelare, { x: startPunkt.x, y: startPunkt.y, z: startPunkt.z, vx: 0, vz: 0,
+                               fartY: 0, riktning: Math.PI, skyddad: S.skydd });
+      underlag = null;
+    }
+
+    function nyttSpel() {
+      startaLjud();
+      S = SVARIGHETER[valdSvar];
+      if (figur) scen.remove(figur.grupp);
+      figur = byggHjalte(valdHjalte);
+      scen.add(figur.grupp);
+      liv = S.liv;
+      poang = 0;
+      besegrade = 0;
+      laddaBana(0);
+      lage = "spelar";
+      gomSkarmar();
+    }
+
+    function gomSkarmar() {
+      ["startSkarm", "mellanSkarm", "slutSkarm"].forEach((id) => $(id).classList.add("dold"));
+    }
+
+    function skadad(fran) {
+      if (spelare.skyddad > 0) return;
+      liv--;
+      spelaLjud("skada");
+      if (liv <= 0) return gameOver();
+      spelare.skyddad = S.skydd;
+      // Studsa bakåt
+      const dx = spelare.x - fran.x, dz = spelare.z - fran.z, l = Math.hypot(dx, dz) || 1;
+      spelare.vx = (dx / l) * 0.25;
+      spelare.vz = (dz / l) * 0.25;
+      spelare.fartY = 0.2;
+    }
+
+    function ramlade() {
+      liv--;
+      spelaLjud("ramla");
+      if (liv <= 0) return gameOver();
+      tillbakaTillStart();
+    }
+
+    function gameOver() {
+      lage = "slut";
+      stoppaMusik();
+      spelaLjud("forlust");
+      $("slutRubrik").textContent = "Game over";
+      $("slutText").textContent = "Ozi och Ludde vann den här gången. Du hade " + poang + " mynt.";
+      $("knappIgen").classList.remove("dold");
+      $("slutSkarm").classList.remove("dold");
+    }
+
+    function banaKlar() {
+      stoppaMusik();
+      if (banNr === BANOR.length - 1) {
+        lage = "slut";
+        spelaLjud("vinst");
+        $("slutRubrik").textContent = "Du vann! 👑";
+        $("slutText").textContent = HJALTAR[valdHjalte].namn + " räddade Kung Hussein! Mynt: " + poang +
+          ". Besegrade fiender: " + besegrade + ". Svårighet: " + S.namn + ".";
+        $("knappIgen").classList.add("dold");
+        $("slutSkarm").classList.remove("dold");
+      } else {
+        lage = "mellan";
+        spelaLjud("klar");
+        $("mellanRubrik").textContent = "Bana " + (banNr + 1) + " klar!";
+        $("mellanText").textContent = "Mynt: " + poang + ". Nästa bana: " + BANOR[banNr + 1].namn + ".";
+        $("mellanSkarm").classList.remove("dold");
+      }
+    }
+
+    // =====================================================
+    // ===== KONTROLLER ====================================
+    // =====================================================
+    const tryckt = {};
+    let hoppNytt = false;
+    addEventListener("keydown", (e) => {
+      tryckt[e.code] = true;
+      if (e.code === "Space" && !e.repeat) hoppNytt = true;
+      if (e.code === "KeyM" && !e.repeat) { startaLjud(); vaxlaLjud(); }
+      if (["Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.code)) e.preventDefault();
+    });
+    addEventListener("keyup", (e) => { tryckt[e.code] = false; });
+
+    // Joystick på mobilen: håll fingret och dra
+    const joy = { aktiv: false, id: null, cx: 0, cy: 0, x: 0, z: 0 };
+    const JOY_RADIE = 50;
+    function joyVila() {
+      $("joyBas").style.left = "30px";
+      $("joyBas").style.top = "";
+      $("joyBas").style.bottom = "30px";
+      $("joyKnapp").style.transform = "translate(0px, 0px)";
+    }
+    function flyttaJoy(e) {
+      let dx = e.clientX - joy.cx, dy = e.clientY - joy.cy;
+      const l = Math.hypot(dx, dy);
+      if (l > JOY_RADIE) { dx *= JOY_RADIE / l; dy *= JOY_RADIE / l; }
+      $("joyKnapp").style.transform = "translate(" + dx + "px, " + dy + "px)";
+      joy.x = dx / JOY_RADIE;
+      joy.z = dy / JOY_RADIE;
+    }
+    $("joyYta").addEventListener("pointerdown", (e) => {
+      e.preventDefault();
+      startaLjud();
+      joy.aktiv = true;
+      joy.id = e.pointerId;
+      try { $("joyYta").setPointerCapture(e.pointerId); } catch (fel) {}
+      joy.cx = e.clientX;
+      joy.cy = e.clientY;
+      $("joyBas").style.left = (e.clientX - 60) + "px";
+      $("joyBas").style.top = (e.clientY - 60) + "px";
+      $("joyBas").style.bottom = "auto";
+      flyttaJoy(e);
+    });
+    $("joyYta").addEventListener("pointermove", (e) => {
+      if (joy.aktiv && e.pointerId === joy.id) flyttaJoy(e);
+    });
+    const slappJoy = (e) => {
+      if (e.pointerId !== joy.id) return;
+      joy.aktiv = false;
+      joy.x = joy.z = 0;
+      joyVila();
+    };
+    $("joyYta").addEventListener("pointerup", slappJoy);
+    $("joyYta").addEventListener("pointercancel", slappJoy);
+
+    const hoppKnapp = $("hoppKnapp");
+    hoppKnapp.addEventListener("pointerdown", (e) => {
+      e.preventDefault();
+      try { hoppKnapp.setPointerCapture(e.pointerId); } catch (fel) {}
+      tryckt.HoppKnapp = true;
+      hoppNytt = true;
+      hoppKnapp.classList.add("aktiv");
+    });
+    const slappHopp = () => { tryckt.HoppKnapp = false; hoppKnapp.classList.remove("aktiv"); };
+    hoppKnapp.addEventListener("pointerup", slappHopp);
+    hoppKnapp.addEventListener("pointercancel", slappHopp);
+    hoppKnapp.addEventListener("contextmenu", (e) => e.preventDefault());
+
+    if (matchMedia("(pointer: coarse)").matches) document.body.classList.add("mobil");
+    addEventListener("touchstart", () => document.body.classList.add("mobil"), { once: true });
+
+    function lasStyrning() {
+      if (joy.aktiv) return { x: joy.x, z: joy.z };
+      let x = 0, z = 0;
+      if (tryckt.ArrowLeft || tryckt.KeyA) x -= 1;
+      if (tryckt.ArrowRight || tryckt.KeyD) x += 1;
+      if (tryckt.ArrowUp || tryckt.KeyW) z -= 1;
+      if (tryckt.ArrowDown || tryckt.KeyS) z += 1;
+      const l = Math.hypot(x, z);
+      return l > 1 ? { x: x / l, z: z / l } : { x, z };
+    }
+
+    // Menyknappar
+    document.querySelectorAll("[data-hjalte]").forEach((k) => k.onclick = () => {
+      valdHjalte = k.dataset.hjalte;
+      document.querySelectorAll("[data-hjalte]").forEach((a) => a.classList.toggle("vald", a === k));
+    });
+    document.querySelectorAll("[data-svar]").forEach((k) => k.onclick = () => {
+      valdSvar = k.dataset.svar;
+      document.querySelectorAll("[data-svar]").forEach((a) => a.classList.toggle("vald", a === k));
+      $("svarText").textContent = SVARIGHETER[valdSvar].text;
+    });
+    $("svarText").textContent = SVARIGHETER.medel.text;
+    $("knappStart").onclick = nyttSpel;
+    $("knappNasta").onclick = () => { gomSkarmar(); laddaBana(banNr + 1); lage = "spelar"; };
+    $("knappIgen").onclick = () => { gomSkarmar(); liv = S.liv; laddaBana(banNr); lage = "spelar"; };
+    $("knappMeny").onclick = () => { gomSkarmar(); $("startSkarm").classList.remove("dold"); lage = "meny"; };
+    $("ljudKnapp").onclick = () => { startaLjud(); vaxlaLjud(); };
+
+    // =====================================================
+    // ===== FYSIK =========================================
+    // =====================================================
+    function krockar(x, y, z) {
+      for (const p of plattformar) {
+        if (x + BREDD > p.minX && x - BREDD < p.maxX &&
+            z + BREDD > p.minZ && z - BREDD < p.maxZ &&
+            y < p.topp - 0.001 && y + HOJD > p.botten) return p;
+      }
+      return null;
+    }
+
+    function kortVinkel(a) {
+      while (a > Math.PI) a -= Math.PI * 2;
+      while (a < -Math.PI) a += Math.PI * 2;
+      return a;
     }
 
     function flyttaPlattformar() {
@@ -267,163 +1086,40 @@
       }
     }
 
-    const BRUN = 0xb45309;
-    const BLA = 0x38bdf8;
-    plattform(0, 0, 16, 30, 0);              // start
-    plattform(0, -30, 16, 24, 0);            // efter första hålet
-    plattform(0, -46, 4, 4, 1.5, BRUN, 1);   // trappsteg i luften
-    plattform(3, -51, 4, 4, 3, BRUN, 1);
-    plattform(-1, -56, 4, 4, 4.5, BRUN, 1);
-    plattform(0, -66, 12, 14, 3, 0x86efac);  // hög platå
-    plattform(0, -82, 16, 14, 0);
-    plattform(0, -95, 4, 4, 0, BLA, 1, 4);    // rörlig plattform
-    plattform(0, -103, 4, 4, 0, BRUN, 1);
-    plattform(0, -111, 4, 4, 0, BLA, 1, 4);   // rörlig plattform
-    plattform(0, -125, 16, 16, 0);            // sista fältet
-    plattform(0, -140, 10, 10, 1.5, 0xa8a29e); // kungens plats
-
-    const MAL = { x: 0, y: 1.5, z: -141 };
-    const bur = byggBurMedKung();
-    bur.position.set(MAL.x, MAL.y, MAL.z);
-    scen.add(bur);
-
-    // Var fienderna står: typ, x, z, höjd, hur långt de går åt sidan
-    const FIENDE_LISTA = [
-      { typ: "ozi",   x: 0,  z: -24, y: 0, vidd: 5 },
-      { typ: "ludde", x: 2,  z: -36, y: 0, vidd: 5 },
-      { typ: "ozi",   x: 0,  z: -66, y: 3, vidd: 4 },
-      { typ: "ludde", x: -3, z: -79, y: 0, vidd: 5 },
-      { typ: "ozi",   x: 3,  z: -85, y: 0, vidd: 5 },
-      { typ: "ludde", x: 0,  z: -121, y: 0, vidd: 6 },
-      { typ: "ozi",   x: -2, z: -129, y: 0, vidd: 5 }
-    ];
-
-    // Var mynten finns: x, y, z
-    const MYNT_LISTA = [
-      [-4, 1, 5], [0, 1, 5], [4, 1, 5],
-      [-5, 1, -30], [5, 1, -30],
-      [0, 2.5, -46], [3, 4, -51], [-1, 5.5, -56],
-      [-4, 4, -66], [4, 4, -66],
-      [-5, 1, -82], [5, 1, -82],
-      [0, 1, -103],
-      [-5, 1, -125], [0, 1, -125], [5, 1, -125]
-    ];
-
-    // ===== Spelets läge =====
-    const spelare = { x: 0, y: 0, z: 10, fartY: 0, paMarken: false, riktning: Math.PI };
-    const BREDD = 0.4, HOJD = 1.6;
-    let spelarFigur = null, valdHjalte = "mustafa";
-    let fiender = [], bollar = [], mynt = [];
-    let liv = LIV_START, skyddad = 0, kastPaus = 0, villKasta = false, poang = 0;
-    let underlag = null; // plattformen spelaren står på
-    let lage = "start"; // "start", "spelar" eller "slut"
-
-    function skapaFiender() {
-      fiender.forEach(f => scen.remove(f.figur));
-      fiender = FIENDE_LISTA.map(f => {
-        const figur = f.typ === "ozi" ? byggOzi() : byggLudde();
-        figur.position.set(f.x, f.y, f.z);
-        scen.add(figur);
-        return { figur, startX: f.x, vidd: f.vidd, fart: 0.04, riktning: 1, levande: true };
-      });
-    }
-
-    function skapaMynt() {
-      mynt.forEach(m => scen.remove(m));
-      mynt = MYNT_LISTA.map(([x, y, z]) => {
-        const m = del(new THREE.CylinderGeometry(0.35, 0.35, 0.08, 16), 0xfacc15, x, y, z, scen);
-        m.rotation.order = "YXZ";
-        m.rotation.x = Math.PI / 2; // stå upp som ett riktigt mynt
-        return m;
-      });
-    }
-
-    function nyttSpel(typ) {
-      valdHjalte = typ;
-      if (spelarFigur) scen.remove(spelarFigur);
-      spelarFigur = byggHjalte(typ);
-      scen.add(spelarFigur);
-      bollar.forEach(b => scen.remove(b.figur));
-      bollar = [];
-      skapaFiender();
-      skapaMynt();
-      poang = 0;
-      liv = LIV_START;
-      tillbakaTillStart();
-      lage = "spelar";
-      document.getElementById("startSkarm").classList.add("dold");
-      document.getElementById("slutSkarm").classList.add("dold");
-    }
-
-    function tillbakaTillStart() {
-      spelare.x = 0; spelare.y = 0; spelare.z = 10;
-      spelare.fartY = 0; spelare.riktning = Math.PI;
-      skyddad = 90; // en kort stund där man inte kan skadas
-    }
-
-    function skadad() {
-      if (skyddad > 0) return;
-      liv--;
-      if (liv <= 0) {
-        visaSlut("Game over", "Ozi och Ludde vann den här gången. Försök igen!");
-      } else {
-        tillbakaTillStart();
+    function gnistor(x, y, z, farg, antal = 8) {
+      for (let i = 0; i < antal; i++) {
+        const m = new THREE.Mesh(gnistForm, new THREE.MeshBasicMaterial({ color: farg, transparent: true }));
+        m.position.set(x, y, z);
+        banGrupp.add(m);
+        partiklar.push({ m, vx: (Math.random() - 0.5) * 0.2, vy: Math.random() * 0.15 + 0.05,
+                         vz: (Math.random() - 0.5) * 0.2, liv: 30 });
       }
     }
 
-    function visaSlut(rubrik, text) {
-      lage = "slut";
-      document.getElementById("slutRubrik").textContent = rubrik;
-      document.getElementById("slutText").textContent = text;
-      document.getElementById("slutSkarm").classList.remove("dold");
+    function traffaBlock(b) {
+      b.bump = 10;
+      spelaLjud("block");
+      if (b.anvand) return;
+      b.anvand = true;
+      b.m.material = tomtMaterial;
+      spelaLjud("mynt");
+      poang++;
+      skapaMynt(b.m.position.x, b.y + 0.9, b.m.position.z, true);
     }
 
-    // ===== Tangenter =====
-    const tryckt = {};
-    addEventListener("keydown", (e) => {
-      tryckt[e.code] = true;
-      if (e.code === "KeyF" && !e.repeat) villKasta = true;
-      if (["Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.code)) e.preventDefault();
-    });
-    addEventListener("keyup", (e) => { tryckt[e.code] = false; });
-
-    document.getElementById("knappMustafa").onclick = () => nyttSpel("mustafa");
-    document.getElementById("knappFahad").onclick = () => nyttSpel("fahad");
-    document.getElementById("knappIgen").onclick = () => nyttSpel(valdHjalte);
-
-    // ===== Mobilknappar: gör samma sak som tangenterna =====
-    if (matchMedia("(pointer: coarse)").matches) document.body.classList.add("mobil");
-    addEventListener("touchstart", () => document.body.classList.add("mobil"), { once: true });
-    document.querySelectorAll(".tryck").forEach((knapp) => {
-      const kod = knapp.dataset.kod;
-      const ner = (e) => {
-        e.preventDefault();
-        knapp.setPointerCapture(e.pointerId);
-        tryckt[kod] = true;
-        if (kod === "KeyF") villKasta = true;
-        knapp.classList.add("aktiv");
-      };
-      const upp = () => {
-        tryckt[kod] = false;
-        knapp.classList.remove("aktiv");
-      };
-      knapp.addEventListener("pointerdown", ner);
-      knapp.addEventListener("pointerup", upp);
-      knapp.addEventListener("pointercancel", upp);
-      knapp.addEventListener("contextmenu", (e) => e.preventDefault());
-    });
-
-    // ===== Krock: står spelaren inne i en plattform? =====
-    function krockar(x, y, z) {
-      for (const p of plattformar) {
-        if (x + BREDD > p.minX && x - BREDD < p.maxX &&
-            z + BREDD > p.minZ && z - BREDD < p.maxZ &&
-            y < p.topp - 0.001 && y + HOJD > p.botten) return p;
-      }
-      return null;
+    function trampa(f) {
+      f.levande = false;
+      f.dod = 25;
+      f.alarm.visible = false;
+      besegrade++;
+      spelare.fartY = (tryckt.Space || tryckt.HoppKnapp) ? HOPP_KRAFT * 1.1 : HOPP_KRAFT * 0.7;
+      spelaLjud("trampa");
+      gnistor(f.x, f.y + 0.6, f.z, f.typ === "ozi" ? 0x22c55e : 0x9333ea, 10);
     }
 
-    // ===== Ett steg i spelet (60 gånger per sekund) =====
+    // =====================================================
+    // ===== ETT STEG I SPELET (60 gånger per sekund) ======
+    // =====================================================
     function steg() {
       // Rörliga plattformar tar med spelaren
       flyttaPlattformar();
@@ -431,127 +1127,232 @@
         spelare.x += underlag.flyttX;
       }
 
-      // Springa
-      let dx = 0, dz = 0;
-      if (tryckt["ArrowLeft"]  || tryckt["KeyA"]) dx -= 1;
-      if (tryckt["ArrowRight"] || tryckt["KeyD"]) dx += 1;
-      if (tryckt["ArrowUp"]    || tryckt["KeyW"]) dz -= 1;
-      if (tryckt["ArrowDown"]  || tryckt["KeyS"]) dz += 1;
-      if (dx || dz) {
-        spelare.riktning = Math.atan2(dx, dz);
-        const nyX = spelare.x + Math.sin(spelare.riktning) * SPRING_FART;
-        const nyZ = spelare.z + Math.cos(spelare.riktning) * SPRING_FART;
-        if (!krockar(nyX, spelare.y, spelare.z)) spelare.x = nyX;
-        if (!krockar(spelare.x, spelare.y, nyZ)) spelare.z = nyZ;
+      // Springa med mjuk fart och mjuk sväng
+      const styr = lasStyrning();
+      const grepp = spelare.paMarken ? ACCEL_MARK : ACCEL_LUFT;
+      spelare.vx += (styr.x * MAX_FART - spelare.vx) * grepp;
+      spelare.vz += (styr.z * MAX_FART - spelare.vz) * grepp;
+      if (Math.hypot(styr.x, styr.z) > 0.15) {
+        const malVinkel = Math.atan2(styr.x, styr.z);
+        spelare.riktning += kortVinkel(malVinkel - spelare.riktning) * SVANG_FART;
+      }
+      if (!krockar(spelare.x + spelare.vx, spelare.y, spelare.z)) spelare.x += spelare.vx;
+      else spelare.vx = 0;
+      if (!krockar(spelare.x, spelare.y, spelare.z + spelare.vz)) spelare.z += spelare.vz;
+      else spelare.vz = 0;
+
+      // Hoppa (lite förlåtande: man kan hoppa strax efter man gått över kanten)
+      if (hoppNytt) { spelare.hoppBuffer = 8; hoppNytt = false; }
+      if (spelare.paMarken) spelare.coyote = 6;
+      else if (spelare.coyote > 0) spelare.coyote--;
+      if (spelare.hoppBuffer > 0) {
+        spelare.hoppBuffer--;
+        if (spelare.coyote > 0) {
+          spelare.fartY = HOPP_KRAFT;
+          spelare.coyote = 0;
+          spelare.hoppBuffer = 0;
+          spelare.paMarken = false;
+          spelaLjud("hopp");
+        }
       }
 
-      // Hoppa
-      if (tryckt["Space"] && spelare.paMarken) {
-        spelare.fartY = HOPP_KRAFT;
-        spelare.paMarken = false;
-      }
-
-      // Tyngdkraft och landning
-      spelare.fartY -= TYNGDKRAFT;
-      const nyY = spelare.y + spelare.fartY;
-      const p = krockar(spelare.x, nyY, spelare.z);
+      // Tyngdkraft. Släpper man hoppknappen blir hoppet lägre.
+      const haller = tryckt.Space || tryckt.HoppKnapp;
+      spelare.fartY -= TYNGDKRAFT * (spelare.fartY > 0 && !haller ? 2.2 : 1);
+      if (spelare.fartY < -0.6) spelare.fartY = -0.6;
+      const varPaMarken = spelare.paMarken;
+      const fallFart = spelare.fartY;
+      const p = krockar(spelare.x, spelare.y + spelare.fartY, spelare.z);
       if (p) {
-        if (spelare.fartY < 0) { spelare.y = p.topp; spelare.paMarken = true; underlag = p; }
-        else { spelare.y = p.botten - HOJD; }
+        if (spelare.fartY < 0) {
+          spelare.y = p.topp;
+          spelare.paMarken = true;
+          underlag = p;
+          if (!varPaMarken && fallFart < -0.2) spelare.squash = 0.75;
+        } else {
+          spelare.y = p.botten - HOJD;
+          if (p.block) traffaBlock(p.block); // huvudet slår i en låda!
+        }
         spelare.fartY = 0;
       } else {
-        spelare.y = nyY;
+        spelare.y += spelare.fartY;
         spelare.paMarken = false;
         underlag = null;
       }
 
-      // Samla mynt
+      // Ramlat ner?
+      if (spelare.y < (tema.lava ? -5 : -12)) return ramlade();
+
+      // Mynt
       for (const m of mynt) {
-        if (m.visible && Math.hypot(m.position.x - spelare.x, m.position.z - spelare.z) < 0.8 &&
-            m.position.y > spelare.y - 0.5 && m.position.y < spelare.y + HOJD + 0.5) {
-          m.visible = false;
+        if (m.samlad) continue;
+        if (Math.hypot(m.x - spelare.x, m.z - spelare.z) < 0.75 &&
+            m.y > spelare.y - 0.4 && m.y < spelare.y + HOJD + 0.4) {
+          m.samlad = true;
+          m.anim = 30;
           poang++;
+          spelaLjud("mynt");
+          gnistor(m.x, m.y, m.z, 0xfde047, 8);
         }
       }
 
-      // Ramlat ner i ett hål?
-      if (spelare.y < -15) { skyddad = 0; skadad(); }
+      // Fiender
+      for (const f of fiender) uppdateraFiende(f);
+      if (lage !== "spelar") return;
 
-      // Kasta boll
-      if (kastPaus > 0) kastPaus--;
-      if (villKasta && kastPaus === 0) {
-        const boll = del(new THREE.SphereGeometry(0.2, 10, 8), 0xfde047,
-          spelare.x, spelare.y + 1, spelare.z, scen);
-        bollar.push({
-          figur: boll,
-          fx: Math.sin(spelare.riktning) * KAST_FART,
-          fy: 0.04,
-          fz: Math.cos(spelare.riktning) * KAST_FART,
-          tid: 90
-        });
-        kastPaus = 20;
+      // Framme vid målet?
+      const malAvstand = mal.typ === "kung" ? 2.5 : 1.5;
+      if (Math.hypot(spelare.x - mal.x, spelare.z - mal.z) < malAvstand && Math.abs(spelare.y - mal.y) < 2) {
+        return banaKlar();
       }
-      villKasta = false;
 
-      // Flytta bollar och kolla om de träffar en fiende
-      for (const b of bollar) {
-        b.figur.position.x += b.fx;
-        b.figur.position.y += b.fy;
-        b.figur.position.z += b.fz;
-        b.fy -= 0.005;
-        b.tid--;
-        for (const f of fiender) {
-          if (f.levande && b.figur.position.distanceTo(
-              f.figur.position.clone().add(new THREE.Vector3(0, 0.6, 0))) < 1.2) {
-            f.levande = false;
-            scen.remove(f.figur);
-            b.tid = 0;
-          }
+      if (spelare.skyddad > 0) spelare.skyddad--;
+      animera();
+    }
+
+    function uppdateraFiende(f) {
+      if (f.dod > 0) {
+        // Plattas till och försvinner
+        f.dod--;
+        f.figur.scale.set(1 + (25 - f.dod) * 0.02, Math.max(0.15, f.dod / 25), 1 + (25 - f.dod) * 0.02);
+        if (f.dod === 0) banGrupp.remove(f.figur);
+        return;
+      }
+      if (!f.levande || lage !== "spelar") return;
+
+      const dx = spelare.x - f.x, dz = spelare.z - f.z;
+      const avst = Math.hypot(dx, dz) || 0.001;
+      const ser = avst < S.jaktAvstand && Math.abs(spelare.y - f.y) < 3;
+      if (ser && !f.jakt) {
+        f.jakt = true;
+        f.hoppV = 0.16; // hoppar till när den ser dig
+        spelaLjud("upptack");
+      }
+      if (!ser) f.jakt = false;
+      f.alarm.visible = f.jakt;
+
+      let mx, mz, fart = FIENDE_FART * S.fiendeFart;
+      if (f.jakt) {
+        mx = dx / avst; mz = dz / avst; fart *= 1.9;
+        // Ludde hoppar mot dig
+        if (f.typ === "ludde") {
+          f.hoppPaus--;
+          if (f.hoppPaus <= 0 && f.hoppY === 0) { f.hoppV = 0.2; f.hoppPaus = 70; }
         }
-        if (b.tid <= 0) scen.remove(b.figur);
+      } else {
+        mx = f.riktning; mz = 0;
+        if (Math.abs(f.x + mx * fart - f.startX) > f.vidd) f.riktning *= -1;
       }
-      bollar = bollar.filter(b => b.tid > 0);
+      const nyX = Math.min(Math.max(f.x + mx * fart, f.min.x), f.max.x);
+      const nyZ = Math.min(Math.max(f.z + mz * fart, f.min.z), f.max.z);
+      if (!f.jakt && nyX !== f.x + mx * fart) f.riktning *= -1;
+      f.x = nyX;
+      f.z = nyZ;
+      f.hoppY += f.hoppV;
+      f.hoppV -= 0.012;
+      if (f.hoppY <= 0) { f.hoppY = 0; f.hoppV = 0; }
+      f.vinkel += kortVinkel(Math.atan2(mx, mz) - f.vinkel) * 0.12;
 
-      // Fienderna går fram och tillbaka
-      for (const f of fiender) {
-        if (!f.levande) continue;
-        f.figur.position.x += f.fart * f.riktning;
-        if (Math.abs(f.figur.position.x - f.startX) > f.vidd) f.riktning *= -1;
-        const fp = f.figur.position;
-        if (Math.hypot(fp.x - spelare.x, fp.z - spelare.z) < 0.9 &&
-            spelare.y < fp.y + 1.1 && spelare.y + HOJD > fp.y) skadad();
-      }
+      // Gång-animation
+      f.tid += fart * 8;
+      if (f.typ === "ozi") f.kropp.rotation.z = Math.sin(f.tid) * 0.18;
+      else f.kropp.scale.y = 1 + Math.sin(f.tid * 2) * 0.06;
+      f.figur.position.set(f.x, f.y + f.hoppY, f.z);
+      f.figur.rotation.y = f.vinkel;
 
-      if (skyddad > 0) skyddad--;
-
-      // Framme vid kungen?
-      if (Math.hypot(spelare.x - MAL.x, spelare.z - MAL.z) < 2.6 &&
-          Math.abs(spelare.y - MAL.y) < 1) {
-        visaSlut("Du vann!", HJALTAR[valdHjalte].namn + " räddade Kung Hussein! Mynt: " +
-          poang + " av " + mynt.length);
+      // Hoppa på huvudet = fienden besegrad. Gå in i den = aj!
+      const fy = f.y + f.hoppY;
+      if (avst < f.radie + 0.35 && spelare.fartY < 0 &&
+          spelare.y > fy + f.hojd * 0.45 && spelare.y < fy + f.hojd + 0.6) {
+        trampa(f);
+      } else if (avst < f.radie + 0.2 && spelare.y < fy + f.hojd - 0.15 && spelare.y + HOJD > fy) {
+        skadad(f);
       }
     }
 
-    // ===== Rita allt =====
-    const kameraMal = new THREE.Vector3();
-    function rita() {
-      if (spelarFigur) {
-        spelarFigur.position.set(spelare.x, spelare.y, spelare.z);
-        spelarFigur.rotation.y = spelare.riktning;
-        spelarFigur.visible = skyddad === 0 || Math.floor(skyddad / 6) % 2 === 0; // blinkar
-        kameraMal.set(spelare.x, spelare.y + 5, spelare.z + 9);
-        kamera.position.lerp(kameraMal, 0.1);
-        kamera.lookAt(spelare.x, spelare.y + 1, spelare.z - 2);
+    function animera() {
+      const tid = performance.now() / 1000;
+      // Mynt snurrar, och flyger upp när man tar dem
+      for (const m of mynt) {
+        if (m.anim > 0) {
+          m.anim--;
+          m.m.position.y += 0.03 + m.anim * 0.006;
+          m.m.rotation.y += 0.45;
+          if (m.anim < 10) m.m.scale.setScalar(Math.max(m.anim / 10, 0.01));
+          if (m.anim === 0) banGrupp.remove(m.m);
+        } else if (!m.samlad) {
+          m.m.rotation.y += 0.05;
+          m.m.position.y = m.y + Math.sin(tid * 3 + m.x + m.z) * 0.08;
+        }
+      }
+      // Lådor gungar när man slår i dem
+      for (const b of block) {
+        if (b.bump > 0) {
+          b.bump--;
+          b.m.position.y = b.y + Math.sin(((10 - b.bump) / 10) * Math.PI) * 0.3;
+        }
+      }
+      // Gnistor
+      for (const g of partiklar) {
+        g.m.position.x += g.vx; g.m.position.y += g.vy; g.m.position.z += g.vz;
+        g.vy -= 0.008;
+        g.liv--;
+        g.m.material.opacity = g.liv / 30;
+        if (g.liv <= 0) banGrupp.remove(g.m);
+      }
+      partiklar = partiklar.filter((g) => g.liv > 0);
+      // Kungen hoppar i buren
+      if (malFigur.kung) malFigur.kung.position.y = Math.abs(Math.sin(tid * 4)) * 0.15;
+    }
 
-        const namn = HJALTAR[valdHjalte].namn;
-        const kvar = fiender.filter(f => f.levande).length;
-        document.getElementById("hud").textContent =
-          namn + "   " + "❤️".repeat(Math.max(liv, 0)) + "   🪙 " + poang + "/" + mynt.length +
-          "   Fiender kvar: " + kvar;
-        mynt.forEach(m => m.rotation.y += 0.04); // mynten snurrar
+    // =====================================================
+    // ===== RITA ALLT =====================================
+    // =====================================================
+    const tittPunkt = new THREE.Vector3();
+    function rita() {
+      if (figur && lage !== "meny") {
+        // Hjältens figur och animation
+        const fart = Math.hypot(spelare.vx, spelare.vz);
+        spelare.animTid += fart * 3.2;
+        const sving = Math.sin(spelare.animTid) * Math.min(fart / MAX_FART, 1) * 0.9;
+        if (spelare.paMarken) {
+          figur.ben[0].rotation.x = sving;
+          figur.ben[1].rotation.x = -sving;
+          figur.armar[0].rotation.x = -sving;
+          figur.armar[1].rotation.x = sving;
+        } else {
+          figur.ben[0].rotation.x = -0.6;
+          figur.ben[1].rotation.x = 0.4;
+          figur.armar[0].rotation.x = -2.6;
+          figur.armar[1].rotation.x = -0.8;
+        }
+        if (figur.mantel) figur.mantel.rotation.x = -0.15 - fart * 4 - (spelare.paMarken ? 0 : 0.4);
+        spelare.squash += (1 - spelare.squash) * 0.15;
+        figur.kropp.scale.set(1 / Math.sqrt(spelare.squash), spelare.squash, 1 / Math.sqrt(spelare.squash));
+        figur.grupp.position.set(spelare.x, spelare.y, spelare.z);
+        figur.grupp.rotation.y = spelare.riktning;
+        figur.grupp.visible = spelare.skyddad === 0 || Math.floor(spelare.skyddad / 5) % 2 === 0;
+
+        // Kameran följer mjukt efter. Står mobilen upp backar kameran mer.
+        const staende = kamera.aspect < 0.9;
+        kameraMal.set(spelare.x, spelare.y + (staende ? 7 : 5.5), spelare.z + (staende ? 13 : 9.5));
+        kamera.position.lerp(kameraMal, 0.08);
+        kameraTitt.lerp(tittPunkt.set(spelare.x, spelare.y + 1, spelare.z - 3), 0.15);
+        kamera.lookAt(kameraTitt);
+
+        sol.position.set(spelare.x + 8, spelare.y + 18, spelare.z + 6);
+        sol.target.position.set(spelare.x, spelare.y, spelare.z);
+
+        $("hud").textContent = HJALTAR[valdHjalte].namn + "  " + "❤️".repeat(Math.max(liv, 0)) +
+          "  🪙 " + poang + "  Bana " + (banNr + 1) + "/" + BANOR.length;
       } else {
-        kamera.position.set(0, 6, 20);
-        kamera.lookAt(0, 0, 0);
+        // Menyn: kameran åker runt över banan
+        const t = performance.now() / 6000;
+        kamera.position.set(Math.sin(t) * 16, 9, -20 + Math.cos(t) * 22);
+        kamera.lookAt(0, 0, -25);
+        sol.position.set(8, 20, -10);
+        sol.target.position.set(0, 0, -25);
+        $("hud").textContent = "";
       }
       ritare.render(scen, kamera);
     }
@@ -563,11 +1364,16 @@
       senaste = nu;
       while (sparadTid >= 1000 / 60) {
         if (lage === "spelar") steg();
+        else if (banGrupp) animera();
         sparadTid -= 1000 / 60;
       }
       rita();
       requestAnimationFrame(loop);
     }
+
+    laddaBana(0);
+    stoppaMusik();
+    $("banTitel").style.opacity = 0;
     requestAnimationFrame(loop);
   </script>
 </body>
