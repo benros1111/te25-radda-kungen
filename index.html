@@ -2,7 +2,7 @@
 <html lang="sv">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
   <title>Rädda Kung Hussein</title>
   <style>
     html, body {
@@ -55,11 +55,60 @@
     #knappMustafa { background: #ff7f11; color: white; }
     #knappFahad { background: #7c3aed; color: white; }
     .dold { display: none !important; }
+
+    /* ===== Mobilknappar ===== */
+    html, body { touch-action: none; user-select: none; -webkit-user-select: none; }
+    #mobil { display: none; }
+    .mobil #mobil { display: block; }
+    .mobil #hjalp { display: none; }
+    .mobil #hud { font-size: 16px; }
+    .pilar, .handling {
+      position: fixed;
+      bottom: 20px;
+      display: grid;
+      gap: 8px;
+    }
+    .pilar {
+      left: 20px;
+      grid-template-columns: repeat(3, 60px);
+      grid-template-rows: repeat(3, 60px);
+    }
+    .handling { right: 20px; grid-template-columns: repeat(2, 80px); }
+    .tryck {
+      margin: 0;
+      padding: 0;
+      font-size: 26px;
+      color: white;
+      background: rgba(0, 0, 0, 0.35);
+      border: 2px solid rgba(255, 255, 255, 0.7);
+      border-radius: 50%;
+      touch-action: none;
+    }
+    .tryck.aktiv { background: rgba(255, 255, 255, 0.5); }
+    .handling .tryck { width: 80px; height: 80px; font-size: 16px; }
+    #mobilUpp { grid-column: 2; grid-row: 1; }
+    #mobilVanster { grid-column: 1; grid-row: 2; }
+    #mobilHoger { grid-column: 3; grid-row: 2; }
+    #mobilNer { grid-column: 2; grid-row: 3; }
   </style>
 </head>
 <body>
   <div id="hud"></div>
   <div id="hjalp">Pilar/WASD = spring · Mellanslag = hoppa · F = kasta boll</div>
+
+  <!-- Knappar på skärmen (syns bara på mobil och surfplatta) -->
+  <div id="mobil">
+    <div class="pilar">
+      <button class="tryck" id="mobilUpp" data-kod="ArrowUp">▲</button>
+      <button class="tryck" id="mobilVanster" data-kod="ArrowLeft">◀</button>
+      <button class="tryck" id="mobilHoger" data-kod="ArrowRight">▶</button>
+      <button class="tryck" id="mobilNer" data-kod="ArrowDown">▼</button>
+    </div>
+    <div class="handling">
+      <button class="tryck" data-kod="KeyF">Kasta</button>
+      <button class="tryck" data-kod="Space">Hoppa</button>
+    </div>
+  </div>
 
   <!-- Startskärm: välj hjälte -->
   <div id="startSkarm" class="skarm">
@@ -341,6 +390,28 @@
     document.getElementById("knappMustafa").onclick = () => nyttSpel("mustafa");
     document.getElementById("knappFahad").onclick = () => nyttSpel("fahad");
     document.getElementById("knappIgen").onclick = () => nyttSpel(valdHjalte);
+
+    // ===== Mobilknappar: gör samma sak som tangenterna =====
+    if (matchMedia("(pointer: coarse)").matches) document.body.classList.add("mobil");
+    addEventListener("touchstart", () => document.body.classList.add("mobil"), { once: true });
+    document.querySelectorAll(".tryck").forEach((knapp) => {
+      const kod = knapp.dataset.kod;
+      const ner = (e) => {
+        e.preventDefault();
+        knapp.setPointerCapture(e.pointerId);
+        tryckt[kod] = true;
+        if (kod === "KeyF") villKasta = true;
+        knapp.classList.add("aktiv");
+      };
+      const upp = () => {
+        tryckt[kod] = false;
+        knapp.classList.remove("aktiv");
+      };
+      knapp.addEventListener("pointerdown", ner);
+      knapp.addEventListener("pointerup", upp);
+      knapp.addEventListener("pointercancel", upp);
+      knapp.addEventListener("contextmenu", (e) => e.preventDefault());
+    });
 
     // ===== Krock: står spelaren inne i en plattform? =====
     function krockar(x, y, z) {
