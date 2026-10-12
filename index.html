@@ -195,16 +195,31 @@
 
     // ===== Banan =====
     const plattformar = [];
-    function plattform(x, z, bredd, djup, topp, farg = 0x4ade80, tjocklek = 4) {
-      del(new THREE.BoxGeometry(bredd, tjocklek, djup), farg, x, topp - tjocklek / 2, z, scen);
+    // rorelse = hur långt plattformen åker åt sidan (0 = står still)
+    function plattform(x, z, bredd, djup, topp, farg = 0x4ade80, tjocklek = 4, rorelse = 0) {
+      const figur = del(new THREE.BoxGeometry(bredd, tjocklek, djup), farg, x, topp - tjocklek / 2, z, scen);
       plattformar.push({
+        figur, startX: x, bredd, rorelse, fart: 0.05, riktning: 1, flyttX: 0,
         minX: x - bredd / 2, maxX: x + bredd / 2,
         minZ: z - djup / 2,  maxZ: z + djup / 2,
         topp: topp, botten: topp - tjocklek
       });
     }
 
+    function flyttaPlattformar() {
+      for (const p of plattformar) {
+        p.flyttX = 0;
+        if (!p.rorelse) continue;
+        p.flyttX = p.fart * p.riktning;
+        p.figur.position.x += p.flyttX;
+        if (Math.abs(p.figur.position.x - p.startX) > p.rorelse) p.riktning *= -1;
+        p.minX = p.figur.position.x - p.bredd / 2;
+        p.maxX = p.figur.position.x + p.bredd / 2;
+      }
+    }
+
     const BRUN = 0xb45309;
+    const BLA = 0x38bdf8;
     plattform(0, 0, 16, 30, 0);              // start
     plattform(0, -30, 16, 24, 0);            // efter första hålet
     plattform(0, -46, 4, 4, 1.5, BRUN, 1);   // trappsteg i luften
@@ -212,9 +227,13 @@
     plattform(-1, -56, 4, 4, 4.5, BRUN, 1);
     plattform(0, -66, 12, 14, 3, 0x86efac);  // hög platå
     plattform(0, -82, 16, 14, 0);
-    plattform(0, -96, 10, 10, 1.5, 0xa8a29e); // kungens plats
+    plattform(0, -95, 4, 4, 0, BLA, 1, 4);    // rörlig plattform
+    plattform(0, -103, 4, 4, 0, BRUN, 1);
+    plattform(0, -111, 4, 4, 0, BLA, 1, 4);   // rörlig plattform
+    plattform(0, -125, 16, 16, 0);            // sista fältet
+    plattform(0, -140, 10, 10, 1.5, 0xa8a29e); // kungens plats
 
-    const MAL = { x: 0, y: 1.5, z: -97 };
+    const MAL = { x: 0, y: 1.5, z: -141 };
     const bur = byggBurMedKung();
     bur.position.set(MAL.x, MAL.y, MAL.z);
     scen.add(bur);
@@ -225,15 +244,29 @@
       { typ: "ludde", x: 2,  z: -36, y: 0, vidd: 5 },
       { typ: "ozi",   x: 0,  z: -66, y: 3, vidd: 4 },
       { typ: "ludde", x: -3, z: -79, y: 0, vidd: 5 },
-      { typ: "ozi",   x: 3,  z: -85, y: 0, vidd: 5 }
+      { typ: "ozi",   x: 3,  z: -85, y: 0, vidd: 5 },
+      { typ: "ludde", x: 0,  z: -121, y: 0, vidd: 6 },
+      { typ: "ozi",   x: -2, z: -129, y: 0, vidd: 5 }
+    ];
+
+    // Var mynten finns: x, y, z
+    const MYNT_LISTA = [
+      [-4, 1, 5], [0, 1, 5], [4, 1, 5],
+      [-5, 1, -30], [5, 1, -30],
+      [0, 2.5, -46], [3, 4, -51], [-1, 5.5, -56],
+      [-4, 4, -66], [4, 4, -66],
+      [-5, 1, -82], [5, 1, -82],
+      [0, 1, -103],
+      [-5, 1, -125], [0, 1, -125], [5, 1, -125]
     ];
 
     // ===== Spelets läge =====
     const spelare = { x: 0, y: 0, z: 10, fartY: 0, paMarken: false, riktning: Math.PI };
     const BREDD = 0.4, HOJD = 1.6;
     let spelarFigur = null, valdHjalte = "mustafa";
-    let fiender = [], bollar = [];
-    let liv = LIV_START, skyddad = 0, kastPaus = 0, villKasta = false;
+    let fiender = [], bollar = [], mynt = [];
+    let liv = LIV_START, skyddad = 0, kastPaus = 0, villKasta = false, poang = 0;
+    let underlag = null; // plattformen spelaren står på
     let lage = "start"; // "start", "spelar" eller "slut"
 
     function skapaFiender() {
@@ -246,6 +279,16 @@
       });
     }
 
+    function skapaMynt() {
+      mynt.forEach(m => scen.remove(m));
+      mynt = MYNT_LISTA.map(([x, y, z]) => {
+        const m = del(new THREE.CylinderGeometry(0.35, 0.35, 0.08, 16), 0xfacc15, x, y, z, scen);
+        m.rotation.order = "YXZ";
+        m.rotation.x = Math.PI / 2; // stå upp som ett riktigt mynt
+        return m;
+      });
+    }
+
     function nyttSpel(typ) {
       valdHjalte = typ;
       if (spelarFigur) scen.remove(spelarFigur);
@@ -254,6 +297,8 @@
       bollar.forEach(b => scen.remove(b.figur));
       bollar = [];
       skapaFiender();
+      skapaMynt();
+      poang = 0;
       liv = LIV_START;
       tillbakaTillStart();
       lage = "spelar";
@@ -309,6 +354,12 @@
 
     // ===== Ett steg i spelet (60 gånger per sekund) =====
     function steg() {
+      // Rörliga plattformar tar med spelaren
+      flyttaPlattformar();
+      if (underlag && underlag.flyttX && !krockar(spelare.x + underlag.flyttX, spelare.y, spelare.z)) {
+        spelare.x += underlag.flyttX;
+      }
+
       // Springa
       let dx = 0, dz = 0;
       if (tryckt["ArrowLeft"]  || tryckt["KeyA"]) dx -= 1;
@@ -334,12 +385,22 @@
       const nyY = spelare.y + spelare.fartY;
       const p = krockar(spelare.x, nyY, spelare.z);
       if (p) {
-        if (spelare.fartY < 0) { spelare.y = p.topp; spelare.paMarken = true; }
+        if (spelare.fartY < 0) { spelare.y = p.topp; spelare.paMarken = true; underlag = p; }
         else { spelare.y = p.botten - HOJD; }
         spelare.fartY = 0;
       } else {
         spelare.y = nyY;
         spelare.paMarken = false;
+        underlag = null;
+      }
+
+      // Samla mynt
+      for (const m of mynt) {
+        if (m.visible && Math.hypot(m.position.x - spelare.x, m.position.z - spelare.z) < 0.8 &&
+            m.position.y > spelare.y - 0.5 && m.position.y < spelare.y + HOJD + 0.5) {
+          m.visible = false;
+          poang++;
+        }
       }
 
       // Ramlat ner i ett hål?
@@ -395,7 +456,8 @@
       // Framme vid kungen?
       if (Math.hypot(spelare.x - MAL.x, spelare.z - MAL.z) < 2.6 &&
           Math.abs(spelare.y - MAL.y) < 1) {
-        visaSlut("Du vann!", HJALTAR[valdHjalte].namn + " räddade Kung Hussein!");
+        visaSlut("Du vann!", HJALTAR[valdHjalte].namn + " räddade Kung Hussein! Mynt: " +
+          poang + " av " + mynt.length);
       }
     }
 
@@ -413,7 +475,9 @@
         const namn = HJALTAR[valdHjalte].namn;
         const kvar = fiender.filter(f => f.levande).length;
         document.getElementById("hud").textContent =
-          namn + "   " + "❤️".repeat(Math.max(liv, 0)) + "   Fiender kvar: " + kvar;
+          namn + "   " + "❤️".repeat(Math.max(liv, 0)) + "   🪙 " + poang + "/" + mynt.length +
+          "   Fiender kvar: " + kvar;
+        mynt.forEach(m => m.rotation.y += 0.04); // mynten snurrar
       } else {
         kamera.position.set(0, 6, 20);
         kamera.lookAt(0, 0, 0);
