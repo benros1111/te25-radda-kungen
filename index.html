@@ -1,0 +1,439 @@
+<!doctype html>
+<html lang="sv">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Rädda Kung Hussein</title>
+  <style>
+    html, body {
+      margin: 0;
+      height: 100%;
+      overflow: hidden;
+      background: #87ceeb;
+      font-family: sans-serif;
+    }
+    #hud {
+      position: fixed;
+      top: 12px;
+      left: 12px;
+      color: white;
+      font-size: 22px;
+      font-weight: bold;
+      text-shadow: 2px 2px 0 #000;
+    }
+    #hjalp {
+      position: fixed;
+      bottom: 12px;
+      left: 12px;
+      color: white;
+      font-size: 16px;
+      text-shadow: 1px 1px 0 #000;
+    }
+    .skarm {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      background: rgba(0, 0, 0, 0.75);
+      color: white;
+      text-align: center;
+    }
+    .skarm h1 { font-size: 44px; margin: 0 0 12px; }
+    .skarm p { font-size: 20px; max-width: 600px; }
+    button {
+      font-size: 22px;
+      padding: 14px 26px;
+      margin: 8px;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    #knappMustafa { background: #ff7f11; color: white; }
+    #knappFahad { background: #7c3aed; color: white; }
+    .dold { display: none !important; }
+  </style>
+</head>
+<body>
+  <div id="hud"></div>
+  <div id="hjalp">Pilar/WASD = spring · Mellanslag = hoppa · F = kasta boll</div>
+
+  <!-- Startskärm: välj hjälte -->
+  <div id="startSkarm" class="skarm">
+    <h1>Rädda Kung Hussein!</h1>
+    <p>Ozi och Ludde har kidnappat Kung Hussein. Han sitter inlåst i en bur i slutet av banan. Kasta bollar på fienderna och rädda kungen!</p>
+    <p>Välj din hjälte:</p>
+    <div>
+      <button id="knappMustafa">Super Mustafa</button>
+      <button id="knappFahad">Prins Fahad</button>
+    </div>
+  </div>
+
+  <!-- Slutskärm: vinst eller förlust -->
+  <div id="slutSkarm" class="skarm dold">
+    <h1 id="slutRubrik"></h1>
+    <p id="slutText"></p>
+    <button id="knappIgen">Spela igen</button>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script>
+    // ===== INSTÄLLNINGAR – testa att ändra! =====
+    const SPRING_FART = 0.15;   // hur snabbt hjälten springer
+    const HOPP_KRAFT  = 0.32;   // hur högt hjälten hoppar
+    const TYNGDKRAFT  = 0.015;  // hur snabbt hjälten faller
+    const KAST_FART   = 0.5;    // hur snabbt bollen flyger
+    const LIV_START   = 3;      // antal liv
+
+    const HJALTAR = {
+      mustafa: { namn: "Super Mustafa", kropp: 0xff7f11, detalj: 0x1d4ed8 },
+      fahad:   { namn: "Prins Fahad",   kropp: 0x7c3aed, detalj: 0xfacc15 }
+    };
+    const HUD_FARG = 0xc68642; // hudfärg på huvudet
+
+    // ===== 3D-världen =====
+    const scen = new THREE.Scene();
+    scen.background = new THREE.Color(0x87ceeb);
+    scen.fog = new THREE.Fog(0x87ceeb, 30, 90);
+
+    const kamera = new THREE.PerspectiveCamera(60, innerWidth / innerHeight, 0.1, 200);
+    const ritare = new THREE.WebGLRenderer({ antialias: true });
+    ritare.setSize(innerWidth, innerHeight);
+    ritare.setPixelRatio(Math.min(devicePixelRatio, 2));
+    document.body.prepend(ritare.domElement);
+
+    scen.add(new THREE.HemisphereLight(0xffffff, 0x446622, 0.8));
+    const sol = new THREE.DirectionalLight(0xffffff, 0.7);
+    sol.position.set(10, 20, 10);
+    scen.add(sol);
+
+    addEventListener("resize", () => {
+      kamera.aspect = innerWidth / innerHeight;
+      kamera.updateProjectionMatrix();
+      ritare.setSize(innerWidth, innerHeight);
+    });
+
+    // ===== Hjälp-funktioner för att bygga figurer =====
+    function del(form, farg, x, y, z, grupp) {
+      const m = new THREE.Mesh(form, new THREE.MeshLambertMaterial({ color: farg }));
+      m.position.set(x, y, z);
+      grupp.add(m);
+      return m;
+    }
+
+    function byggHjalte(typ) {
+      const h = HJALTAR[typ];
+      const g = new THREE.Group();
+      // Ben
+      del(new THREE.BoxGeometry(0.2, 0.5, 0.2), 0x333333, -0.15, 0.25, 0, g);
+      del(new THREE.BoxGeometry(0.2, 0.5, 0.2), 0x333333, 0.15, 0.25, 0, g);
+      // Kropp
+      del(new THREE.CylinderGeometry(0.35, 0.4, 0.7, 12), h.kropp, 0, 0.85, 0, g);
+      // Huvud och ögon
+      del(new THREE.SphereGeometry(0.32, 16, 12), HUD_FARG, 0, 1.45, 0, g);
+      del(new THREE.SphereGeometry(0.06, 8, 6), 0x000000, -0.11, 1.5, 0.28, g);
+      del(new THREE.SphereGeometry(0.06, 8, 6), 0x000000, 0.11, 1.5, 0.28, g);
+      if (typ === "mustafa") {
+        // Pannband
+        del(new THREE.CylinderGeometry(0.34, 0.34, 0.1, 16), h.detalj, 0, 1.6, 0, g);
+      } else {
+        // Krona och mantel
+        del(new THREE.CylinderGeometry(0.25, 0.22, 0.2, 8), h.detalj, 0, 1.82, 0, g);
+        del(new THREE.BoxGeometry(0.7, 0.9, 0.05), 0xdc2626, 0, 0.9, -0.4, g);
+      }
+      return g;
+    }
+
+    function byggOzi() {
+      // Grön taggboll med ett stort öga
+      const g = new THREE.Group();
+      del(new THREE.SphereGeometry(0.55, 16, 12), 0x16a34a, 0, 0.55, 0, g);
+      for (let i = 0; i < 3; i++) {
+        const tagg = del(new THREE.ConeGeometry(0.12, 0.4, 8), 0x14532d, (i - 1) * 0.3, 1.15, 0, g);
+        tagg.rotation.z = -(i - 1) * 0.4;
+      }
+      del(new THREE.SphereGeometry(0.22, 12, 8), 0xffffff, 0, 0.65, 0.42, g);
+      del(new THREE.SphereGeometry(0.1, 8, 6), 0x000000, 0, 0.65, 0.62, g);
+      return g;
+    }
+
+    function byggLudde() {
+      // Lila låda med horn
+      const g = new THREE.Group();
+      del(new THREE.BoxGeometry(1, 0.9, 1), 0x9333ea, 0, 0.6, 0, g);
+      del(new THREE.ConeGeometry(0.12, 0.4, 8), 0xfef3c7, -0.3, 1.25, 0, g);
+      del(new THREE.ConeGeometry(0.12, 0.4, 8), 0xfef3c7, 0.3, 1.25, 0, g);
+      del(new THREE.SphereGeometry(0.14, 8, 6), 0xffffff, -0.22, 0.75, 0.5, g);
+      del(new THREE.SphereGeometry(0.14, 8, 6), 0xffffff, 0.22, 0.75, 0.5, g);
+      del(new THREE.SphereGeometry(0.06, 8, 6), 0x000000, -0.22, 0.75, 0.62, g);
+      del(new THREE.SphereGeometry(0.06, 8, 6), 0x000000, 0.22, 0.75, 0.62, g);
+      del(new THREE.BoxGeometry(0.3, 0.15, 0.4), 0x3b0764, -0.25, 0.08, 0, g);
+      del(new THREE.BoxGeometry(0.3, 0.15, 0.4), 0x3b0764, 0.25, 0.08, 0, g);
+      return g;
+    }
+
+    function byggBurMedKung() {
+      const g = new THREE.Group();
+      // Kung Hussein
+      del(new THREE.CylinderGeometry(0.4, 0.5, 0.9, 12), 0xb91c1c, 0, 0.65, 0, g);
+      del(new THREE.SphereGeometry(0.32, 16, 12), HUD_FARG, 0, 1.4, 0, g);
+      del(new THREE.SphereGeometry(0.2, 10, 8), 0xffffff, 0, 1.25, 0.2, g); // skägg
+      del(new THREE.CylinderGeometry(0.3, 0.26, 0.3, 8), 0xfacc15, 0, 1.8, 0, g); // krona
+      // Buren
+      for (let i = 0; i < 12; i++) {
+        const v = (i / 12) * Math.PI * 2;
+        del(new THREE.CylinderGeometry(0.05, 0.05, 2.4, 6), 0x555555,
+            Math.sin(v) * 1.1, 1.2, Math.cos(v) * 1.1, g);
+      }
+      del(new THREE.CylinderGeometry(1.2, 1.2, 0.15, 16), 0x444444, 0, 2.45, 0, g);
+      del(new THREE.CylinderGeometry(1.2, 1.2, 0.1, 16), 0x444444, 0, 0.05, 0, g);
+      return g;
+    }
+
+    // ===== Banan =====
+    const plattformar = [];
+    function plattform(x, z, bredd, djup, topp, farg = 0x4ade80, tjocklek = 4) {
+      del(new THREE.BoxGeometry(bredd, tjocklek, djup), farg, x, topp - tjocklek / 2, z, scen);
+      plattformar.push({
+        minX: x - bredd / 2, maxX: x + bredd / 2,
+        minZ: z - djup / 2,  maxZ: z + djup / 2,
+        topp: topp, botten: topp - tjocklek
+      });
+    }
+
+    const BRUN = 0xb45309;
+    plattform(0, 0, 16, 30, 0);              // start
+    plattform(0, -30, 16, 24, 0);            // efter första hålet
+    plattform(0, -46, 4, 4, 1.5, BRUN, 1);   // trappsteg i luften
+    plattform(3, -51, 4, 4, 3, BRUN, 1);
+    plattform(-1, -56, 4, 4, 4.5, BRUN, 1);
+    plattform(0, -66, 12, 14, 3, 0x86efac);  // hög platå
+    plattform(0, -82, 16, 14, 0);
+    plattform(0, -96, 10, 10, 1.5, 0xa8a29e); // kungens plats
+
+    const MAL = { x: 0, y: 1.5, z: -97 };
+    const bur = byggBurMedKung();
+    bur.position.set(MAL.x, MAL.y, MAL.z);
+    scen.add(bur);
+
+    // Var fienderna står: typ, x, z, höjd, hur långt de går åt sidan
+    const FIENDE_LISTA = [
+      { typ: "ozi",   x: 0,  z: -24, y: 0, vidd: 5 },
+      { typ: "ludde", x: 2,  z: -36, y: 0, vidd: 5 },
+      { typ: "ozi",   x: 0,  z: -66, y: 3, vidd: 4 },
+      { typ: "ludde", x: -3, z: -79, y: 0, vidd: 5 },
+      { typ: "ozi",   x: 3,  z: -85, y: 0, vidd: 5 }
+    ];
+
+    // ===== Spelets läge =====
+    const spelare = { x: 0, y: 0, z: 10, fartY: 0, paMarken: false, riktning: Math.PI };
+    const BREDD = 0.4, HOJD = 1.6;
+    let spelarFigur = null, valdHjalte = "mustafa";
+    let fiender = [], bollar = [];
+    let liv = LIV_START, skyddad = 0, kastPaus = 0, villKasta = false;
+    let lage = "start"; // "start", "spelar" eller "slut"
+
+    function skapaFiender() {
+      fiender.forEach(f => scen.remove(f.figur));
+      fiender = FIENDE_LISTA.map(f => {
+        const figur = f.typ === "ozi" ? byggOzi() : byggLudde();
+        figur.position.set(f.x, f.y, f.z);
+        scen.add(figur);
+        return { figur, startX: f.x, vidd: f.vidd, fart: 0.04, riktning: 1, levande: true };
+      });
+    }
+
+    function nyttSpel(typ) {
+      valdHjalte = typ;
+      if (spelarFigur) scen.remove(spelarFigur);
+      spelarFigur = byggHjalte(typ);
+      scen.add(spelarFigur);
+      bollar.forEach(b => scen.remove(b.figur));
+      bollar = [];
+      skapaFiender();
+      liv = LIV_START;
+      tillbakaTillStart();
+      lage = "spelar";
+      document.getElementById("startSkarm").classList.add("dold");
+      document.getElementById("slutSkarm").classList.add("dold");
+    }
+
+    function tillbakaTillStart() {
+      spelare.x = 0; spelare.y = 0; spelare.z = 10;
+      spelare.fartY = 0; spelare.riktning = Math.PI;
+      skyddad = 90; // en kort stund där man inte kan skadas
+    }
+
+    function skadad() {
+      if (skyddad > 0) return;
+      liv--;
+      if (liv <= 0) {
+        visaSlut("Game over", "Ozi och Ludde vann den här gången. Försök igen!");
+      } else {
+        tillbakaTillStart();
+      }
+    }
+
+    function visaSlut(rubrik, text) {
+      lage = "slut";
+      document.getElementById("slutRubrik").textContent = rubrik;
+      document.getElementById("slutText").textContent = text;
+      document.getElementById("slutSkarm").classList.remove("dold");
+    }
+
+    // ===== Tangenter =====
+    const tryckt = {};
+    addEventListener("keydown", (e) => {
+      tryckt[e.code] = true;
+      if (e.code === "KeyF" && !e.repeat) villKasta = true;
+      if (["Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.code)) e.preventDefault();
+    });
+    addEventListener("keyup", (e) => { tryckt[e.code] = false; });
+
+    document.getElementById("knappMustafa").onclick = () => nyttSpel("mustafa");
+    document.getElementById("knappFahad").onclick = () => nyttSpel("fahad");
+    document.getElementById("knappIgen").onclick = () => nyttSpel(valdHjalte);
+
+    // ===== Krock: står spelaren inne i en plattform? =====
+    function krockar(x, y, z) {
+      for (const p of plattformar) {
+        if (x + BREDD > p.minX && x - BREDD < p.maxX &&
+            z + BREDD > p.minZ && z - BREDD < p.maxZ &&
+            y < p.topp - 0.001 && y + HOJD > p.botten) return p;
+      }
+      return null;
+    }
+
+    // ===== Ett steg i spelet (60 gånger per sekund) =====
+    function steg() {
+      // Springa
+      let dx = 0, dz = 0;
+      if (tryckt["ArrowLeft"]  || tryckt["KeyA"]) dx -= 1;
+      if (tryckt["ArrowRight"] || tryckt["KeyD"]) dx += 1;
+      if (tryckt["ArrowUp"]    || tryckt["KeyW"]) dz -= 1;
+      if (tryckt["ArrowDown"]  || tryckt["KeyS"]) dz += 1;
+      if (dx || dz) {
+        spelare.riktning = Math.atan2(dx, dz);
+        const nyX = spelare.x + Math.sin(spelare.riktning) * SPRING_FART;
+        const nyZ = spelare.z + Math.cos(spelare.riktning) * SPRING_FART;
+        if (!krockar(nyX, spelare.y, spelare.z)) spelare.x = nyX;
+        if (!krockar(spelare.x, spelare.y, nyZ)) spelare.z = nyZ;
+      }
+
+      // Hoppa
+      if (tryckt["Space"] && spelare.paMarken) {
+        spelare.fartY = HOPP_KRAFT;
+        spelare.paMarken = false;
+      }
+
+      // Tyngdkraft och landning
+      spelare.fartY -= TYNGDKRAFT;
+      const nyY = spelare.y + spelare.fartY;
+      const p = krockar(spelare.x, nyY, spelare.z);
+      if (p) {
+        if (spelare.fartY < 0) { spelare.y = p.topp; spelare.paMarken = true; }
+        else { spelare.y = p.botten - HOJD; }
+        spelare.fartY = 0;
+      } else {
+        spelare.y = nyY;
+        spelare.paMarken = false;
+      }
+
+      // Ramlat ner i ett hål?
+      if (spelare.y < -15) { skyddad = 0; skadad(); }
+
+      // Kasta boll
+      if (kastPaus > 0) kastPaus--;
+      if (villKasta && kastPaus === 0) {
+        const boll = del(new THREE.SphereGeometry(0.2, 10, 8), 0xfde047,
+          spelare.x, spelare.y + 1, spelare.z, scen);
+        bollar.push({
+          figur: boll,
+          fx: Math.sin(spelare.riktning) * KAST_FART,
+          fy: 0.04,
+          fz: Math.cos(spelare.riktning) * KAST_FART,
+          tid: 90
+        });
+        kastPaus = 20;
+      }
+      villKasta = false;
+
+      // Flytta bollar och kolla om de träffar en fiende
+      for (const b of bollar) {
+        b.figur.position.x += b.fx;
+        b.figur.position.y += b.fy;
+        b.figur.position.z += b.fz;
+        b.fy -= 0.005;
+        b.tid--;
+        for (const f of fiender) {
+          if (f.levande && b.figur.position.distanceTo(
+              f.figur.position.clone().add(new THREE.Vector3(0, 0.6, 0))) < 1.2) {
+            f.levande = false;
+            scen.remove(f.figur);
+            b.tid = 0;
+          }
+        }
+        if (b.tid <= 0) scen.remove(b.figur);
+      }
+      bollar = bollar.filter(b => b.tid > 0);
+
+      // Fienderna går fram och tillbaka
+      for (const f of fiender) {
+        if (!f.levande) continue;
+        f.figur.position.x += f.fart * f.riktning;
+        if (Math.abs(f.figur.position.x - f.startX) > f.vidd) f.riktning *= -1;
+        const fp = f.figur.position;
+        if (Math.hypot(fp.x - spelare.x, fp.z - spelare.z) < 0.9 &&
+            spelare.y < fp.y + 1.1 && spelare.y + HOJD > fp.y) skadad();
+      }
+
+      if (skyddad > 0) skyddad--;
+
+      // Framme vid kungen?
+      if (Math.hypot(spelare.x - MAL.x, spelare.z - MAL.z) < 2.6 &&
+          Math.abs(spelare.y - MAL.y) < 1) {
+        visaSlut("Du vann!", HJALTAR[valdHjalte].namn + " räddade Kung Hussein!");
+      }
+    }
+
+    // ===== Rita allt =====
+    const kameraMal = new THREE.Vector3();
+    function rita() {
+      if (spelarFigur) {
+        spelarFigur.position.set(spelare.x, spelare.y, spelare.z);
+        spelarFigur.rotation.y = spelare.riktning;
+        spelarFigur.visible = skyddad === 0 || Math.floor(skyddad / 6) % 2 === 0; // blinkar
+        kameraMal.set(spelare.x, spelare.y + 5, spelare.z + 9);
+        kamera.position.lerp(kameraMal, 0.1);
+        kamera.lookAt(spelare.x, spelare.y + 1, spelare.z - 2);
+
+        const namn = HJALTAR[valdHjalte].namn;
+        const kvar = fiender.filter(f => f.levande).length;
+        document.getElementById("hud").textContent =
+          namn + "   " + "❤️".repeat(Math.max(liv, 0)) + "   Fiender kvar: " + kvar;
+      } else {
+        kamera.position.set(0, 6, 20);
+        kamera.lookAt(0, 0, 0);
+      }
+      ritare.render(scen, kamera);
+    }
+
+    // ===== Spel-loopen =====
+    let sparadTid = 0, senaste = performance.now();
+    function loop(nu) {
+      sparadTid += Math.min(nu - senaste, 100);
+      senaste = nu;
+      while (sparadTid >= 1000 / 60) {
+        if (lage === "spelar") steg();
+        sparadTid -= 1000 / 60;
+      }
+      rita();
+      requestAnimationFrame(loop);
+    }
+    requestAnimationFrame(loop);
+  </script>
+</body>
+</html>

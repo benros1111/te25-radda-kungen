@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="sv">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TE25 Plattformsspel</title>
+  <style>
+    body {
+      margin: 0;
+      background: #222;
+      color: white;
+      font-family: sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    canvas {
+      background: #8fd3ff;
+      max-width: 100%;
+      border: 4px solid white;
+    }
+  </style>
+</head>
+<body>
+  <h1>TE25 Plattformsspel</h1>
+  <canvas id="spel" width="800" height="450"></canvas>
+  <p>Pil vänster/höger = spring. Mellanslag eller pil upp = hoppa.</p>
+
+  <script>
+    // ===== INSTÄLLNINGAR – testa att ändra! =====
+    const SPRING_FART = 5;    // hur snabbt hjälten springer
+    const HOPP_KRAFT  = 13;   // hur högt hjälten hoppar
+    const TYNGDKRAFT  = 0.6;  // hur snabbt hjälten faller
+    const HJALTE_FARG = "#e63946";
+    const MARK_FARG   = "#3a5a40";
+
+    // ===== Rityta =====
+    const canvas = document.getElementById("spel");
+    const ctx = canvas.getContext("2d");
+    const MARK_Y = canvas.height - 50; // var marken börjar
+
+    // ===== Hjälten =====
+    const hjalte = {
+      x: 100,
+      y: 100,
+      bredd: 40,
+      hojd: 40,
+      fartX: 0,
+      fartY: 0,
+      paMarken: false
+    };
+
+    // ===== Tangenter =====
+    const tryckt = {};
+    window.addEventListener("keydown", (e) => {
+      tryckt[e.code] = true;
+      if (["Space", "ArrowUp", "ArrowLeft", "ArrowRight"].includes(e.code)) {
+        e.preventDefault(); // sidan ska inte scrolla
+      }
+    });
+    window.addEventListener("keyup", (e) => {
+      tryckt[e.code] = false;
+    });
+
+    // ===== Uppdatera: flytta saker =====
+    function uppdatera() {
+      // Springa
+      hjalte.fartX = 0;
+      if (tryckt["ArrowLeft"])  hjalte.fartX = -SPRING_FART;
+      if (tryckt["ArrowRight"]) hjalte.fartX = SPRING_FART;
+
+      // Hoppa (bara om vi står på marken)
+      if ((tryckt["Space"] || tryckt["ArrowUp"]) && hjalte.paMarken) {
+        hjalte.fartY = -HOPP_KRAFT;
+        hjalte.paMarken = false;
+      }
+
+      // Tyngdkraft
+      hjalte.fartY += TYNGDKRAFT;
+
+      // Flytta
+      hjalte.x += hjalte.fartX;
+      hjalte.y += hjalte.fartY;
+
+      // Stanna på marken
+      if (hjalte.y + hjalte.hojd > MARK_Y) {
+        hjalte.y = MARK_Y - hjalte.hojd;
+        hjalte.fartY = 0;
+        hjalte.paMarken = true;
+      }
+
+      // Stanna innanför kanterna
+      if (hjalte.x < 0) hjalte.x = 0;
+      if (hjalte.x + hjalte.bredd > canvas.width) {
+        hjalte.x = canvas.width - hjalte.bredd;
+      }
+    }
+
+    // ===== Rita: måla allt på skärmen =====
+    function rita() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Marken
+      ctx.fillStyle = MARK_FARG;
+      ctx.fillRect(0, MARK_Y, canvas.width, canvas.height - MARK_Y);
+
+      // Hjälten
+      ctx.fillStyle = HJALTE_FARG;
+      ctx.fillRect(hjalte.x, hjalte.y, hjalte.bredd, hjalte.hojd);
+
+      // Ögon (så hjälten ser levande ut)
+      ctx.fillStyle = "white";
+      ctx.fillRect(hjalte.x + 8, hjalte.y + 10, 8, 8);
+      ctx.fillRect(hjalte.x + 24, hjalte.y + 10, 8, 8);
+    }
+
+    // ===== Spel-loopen: körs ca 60 gånger per sekund =====
+    let senaste = 0;
+    function loop(tid) {
+      // Samma fart på alla skärmar (60 Hz eller 120 Hz)
+      if (tid - senaste >= 1000 / 61) {
+        senaste = tid;
+        uppdatera();
+      }
+      rita();
+      requestAnimationFrame(loop);
+    }
+    requestAnimationFrame(loop);
+  </script>
+</body>
+</html>
