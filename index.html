@@ -89,6 +89,25 @@
     }
     .skarm button.vald { border-color: white; background: #22c55e; color: white; }
     #knappStart { background: #f59e0b; color: white; font-size: 26px; margin-top: 16px; }
+
+    /* ===== Topplistan ===== */
+    .skarm input {
+      font-size: 20px;
+      padding: 10px 14px;
+      border-radius: 10px;
+      border: none;
+      width: 200px;
+      margin: 5px;
+      user-select: text;
+      -webkit-user-select: text;
+    }
+    #sparaKnapp { background: #22c55e; color: white; }
+    .tabell { border-collapse: collapse; margin: 8px 0; font-size: 18px; min-width: 280px; }
+    .tabell td { padding: 6px 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.2); }
+    .tabell td:first-child { font-weight: bold; }
+    .tabell td:last-child { text-align: right; font-weight: bold; color: #fde047; }
+    .tabell tr.min { background: rgba(34, 197, 94, 0.4); }
+    .liten { font-size: 14px; opacity: 0.8; }
     .dold { display: none !important; }
 
     /* ===== Mobil: joystick och hoppknapp ===== */
@@ -172,6 +191,7 @@
     </div>
     <p id="svarText"></p>
     <button id="knappStart">Starta!</button>
+    <button id="knappTopplista">🏆 Topplista</button>
   </div>
 
   <!-- Mellan banorna -->
@@ -185,10 +205,25 @@
   <div id="slutSkarm" class="skarm dold">
     <h1 id="slutRubrik"></h1>
     <p id="slutText"></p>
+    <div id="sparaRuta" class="dold">
+      <p>Skriv ditt namn och kom med på topplistan:</p>
+      <input id="namnFalt" maxlength="12" placeholder="Ditt namn" autocomplete="off">
+      <button id="sparaKnapp">Spara</button>
+      <p id="sparaInfo" class="liten"></p>
+    </div>
+    <div id="slutLista"></div>
     <div>
       <button id="knappIgen">Försök banan igen</button>
       <button id="knappMeny">Till menyn</button>
     </div>
+  </div>
+
+  <!-- Topplistan -->
+  <div id="topplistaSkarm" class="skarm dold">
+    <h1>🏆 Topplista</h1>
+    <p class="liten">Poäng = mynt × 1 (Lätt), × 1,5 (Medel), × 2 (Svår)</p>
+    <div id="topplistaInnehall"></div>
+    <button id="knappStangLista">Stäng</button>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/three@0.149.0/build/three.min.js"></script>
@@ -893,7 +928,7 @@
                       coyote: 0, hoppBuffer: 0, skyddad: 0, animTid: 0, squash: 1 };
     let startPunkt = { x: 0, y: 0, z: 0 };
     let figur = null, valdHjalte = "mustafa", valdSvar = "medel", S = SVARIGHETER.medel;
-    let liv = 3, poang = 0, besegrade = 0, underlag = null;
+    let liv = 3, poang = 0, poangVidBanStart = 0, besegrade = 0, underlag = null;
     let lage = "meny"; // "meny", "spelar", "mellan" eller "slut"
     const kameraMal = new THREE.Vector3();
     const kameraTitt = new THREE.Vector3();
@@ -917,6 +952,7 @@
       liv = S.liv;
       poang = 0;
       besegrade = 0;
+      poangVidBanStart = 0;
       laddaBana(0);
       lage = "spelar";
       gomSkarmar();
@@ -953,6 +989,8 @@
       $("slutRubrik").textContent = "Game over";
       $("slutText").textContent = "Ozi och Ludde vann den här gången. Du hade " + poang + " mynt.";
       $("knappIgen").classList.remove("dold");
+      $("sparaRuta").classList.add("dold");
+      $("slutLista").innerHTML = "";
       $("slutSkarm").classList.remove("dold");
     }
 
@@ -965,6 +1003,11 @@
         $("slutText").textContent = HJALTAR[valdHjalte].namn + " räddade Kung Hussein! Mynt: " + poang +
           ". Besegrade fiender: " + besegrade + ". Svårighet: " + S.namn + ".";
         $("knappIgen").classList.add("dold");
+        $("sparaRuta").classList.remove("dold");
+        $("sparaKnapp").disabled = false;
+        $("sparaInfo").textContent = "";
+        $("slutLista").innerHTML = "";
+        try { $("namnFalt").value = localStorage.getItem("namn") || ""; } catch (fel) {}
         $("slutSkarm").classList.remove("dold");
       } else {
         lage = "mellan";
@@ -1069,8 +1112,77 @@
     });
     $("svarText").textContent = SVARIGHETER.medel.text;
     $("knappStart").onclick = nyttSpel;
-    $("knappNasta").onclick = () => { gomSkarmar(); laddaBana(banNr + 1); lage = "spelar"; };
-    $("knappIgen").onclick = () => { gomSkarmar(); liv = S.liv; laddaBana(banNr); lage = "spelar"; };
+    $("knappNasta").onclick = () => { gomSkarmar(); poangVidBanStart = poang; laddaBana(banNr + 1); lage = "spelar"; };
+    $("knappIgen").onclick = () => {
+      gomSkarmar();
+      liv = S.liv;
+      poang = poangVidBanStart; // mynten från försöket som misslyckades räknas inte
+      laddaBana(banNr);
+      lage = "spelar";
+    };
+    // ===== Topplistan (sparas på Netlify) =====
+    const SVAR_NAMN = { latt: "Lätt", medel: "Medel", svar: "Svår" };
+    function topplistaTabell(lista, minPlats = 0) {
+      if (!lista.length) return "<p>Ingen har kommit med än. Bli först!</p>";
+      const rader = lista.map((r, i) => {
+        const medalj = ["🥇", "🥈", "🥉"][i] || (i + 1) + ".";
+        const td = (text) => {
+          const cell = document.createElement("td");
+          cell.textContent = text; // textContent: namnet kan aldrig bli kod
+          return cell.outerHTML;
+        };
+        return "<tr" + (i + 1 === minPlats ? ' class="min"' : "") + ">" +
+          td(medalj) + td(r.namn) + td(SVAR_NAMN[r.svar] + " · " + r.mynt + " 🪙") + td(r.poang) + "</tr>";
+      });
+      return '<table class="tabell">' + rader.join("") + "</table>";
+    }
+
+    async function visaTopplista() {
+      $("topplistaSkarm").classList.remove("dold");
+      $("topplistaInnehall").innerHTML = "<p>Laddar...</p>";
+      try {
+        const svar = await fetch("/api/topplista");
+        if (!svar.ok) throw new Error();
+        $("topplistaInnehall").innerHTML = topplistaTabell(await svar.json());
+      } catch (fel) {
+        $("topplistaInnehall").innerHTML = "<p>Topplistan fungerar bara när spelet ligger på nätet.</p>";
+      }
+    }
+
+    async function sparaResultat() {
+      const namn = $("namnFalt").value.trim();
+      if (!namn) { $("sparaInfo").textContent = "Skriv ett namn först."; return; }
+      try { localStorage.setItem("namn", namn); } catch (fel) {}
+      $("sparaKnapp").disabled = true;
+      $("sparaInfo").textContent = "Sparar...";
+      try {
+        const svar = await fetch("/api/topplista", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ namn, mynt: poang, svar: valdSvar })
+        });
+        const data = await svar.json();
+        if (!svar.ok) throw new Error(data.fel);
+        $("sparaRuta").classList.add("dold");
+        $("slutLista").innerHTML = (data.plats && data.plats <= 10
+          ? "<p>Du kom på plats " + data.plats + "! 🎉</p>"
+          : "<p>Sparat! Du kom inte med bland de 10 bästa den här gången.</p>") +
+          topplistaTabell(data.lista, data.plats);
+      } catch (fel) {
+        $("sparaKnapp").disabled = false;
+        $("sparaInfo").textContent = fel.message && fel.message.length < 40
+          ? fel.message : "Det gick inte att spara. Spelet måste ligga på nätet.";
+      }
+    }
+
+    $("knappTopplista").onclick = visaTopplista;
+    $("knappStangLista").onclick = () => $("topplistaSkarm").classList.add("dold");
+    $("sparaKnapp").onclick = sparaResultat;
+    $("namnFalt").addEventListener("keydown", (e) => {
+      e.stopPropagation(); // mellanslag i namnet ska inte få hjälten att hoppa
+      if (e.key === "Enter") sparaResultat();
+    });
+
     $("knappMeny").onclick = () => { gomSkarmar(); $("startSkarm").classList.remove("dold"); lage = "meny"; };
     $("ljudKnapp").onclick = () => { startaLjud(); vaxlaLjud(); };
 
