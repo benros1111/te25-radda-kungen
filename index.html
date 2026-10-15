@@ -226,8 +226,18 @@
     <button id="knappStangLista">Stäng</button>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/three@0.149.0/build/three.min.js"></script>
-  <script>
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.149.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.149.0/examples/jsm/"
+      }
+    }
+  </script>
+  <script type="module">
+    import * as THREE from "three";
+    import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+
     // =====================================================
     // ===== INSTÄLLNINGAR – testa att ändra! ==============
     // =====================================================
@@ -547,7 +557,102 @@
     // =====================================================
     // ===== FIGURER =======================================
     // =====================================================
+    // =====================================================
+    // ===== 3D-MODELLER (från Blender och Kenney) =========
+    // =====================================================
+    // namn: [fil, höjd i meter]. Saknas en fil används figuren som är byggd med kod.
+    const MODELL_FILER = {
+      // Elevernas figurer från Blender
+      mustafa: ["modeller/mustafa.glb", 1.8],
+      fahad:   ["modeller/fahad.glb", 1.8],
+      ozi:     ["modeller/ozi.glb", 1.2],
+      ludde:   ["modeller/ludde.glb", 1.3],
+      kung:    ["modeller/kung.glb", 2.0],
+      // Saker på banan från Kenney.nl (CC0, fria att använda)
+      trad1:       ["modeller/kenney/tree_default.glb", 3.2],
+      trad2:       ["modeller/kenney/tree_oak.glb", 3.6],
+      trad3:       ["modeller/kenney/tree_detailed.glb", 3.4],
+      tall:        ["modeller/kenney/tree_pineRoundA.glb", 4],
+      palm:        ["modeller/kenney/tree_palmTall.glb", 4.5],
+      buske:       ["modeller/kenney/plant_bush.glb", 0.7],
+      storBuske:   ["modeller/kenney/plant_bushLarge.glb", 1.1],
+      sten:        ["modeller/kenney/rock_largeA.glb", 1.1],
+      sten2:       ["modeller/kenney/rock_largeB.glb", 0.9],
+      litenSten:   ["modeller/kenney/rock_smallA.glb", 0.35],
+      hogSten:     ["modeller/kenney/rock_tallA.glb", 2.4],
+      hogSten2:    ["modeller/kenney/rock_tallB.glb", 2],
+      blommaRod:   ["modeller/kenney/flower_redA.glb", 0.45],
+      blommaGul:   ["modeller/kenney/flower_yellowA.glb", 0.45],
+      blommaLila:  ["modeller/kenney/flower_purpleA.glb", 0.45],
+      svamp:       ["modeller/kenney/mushroom_red.glb", 0.45],
+      gras:        ["modeller/kenney/grass_large.glb", 0.45],
+      kaktus:      ["modeller/kenney/cactus_tall.glb", 2.2],
+      litenKaktus: ["modeller/kenney/cactus_short.glb", 1.1],
+      mynt:        ["modeller/kenney/coin-gold.glb", 0.7],
+      flagga:      ["modeller/kenney/flag.glb", 3.5]
+    };
+    const MODELL = {};
+
+    // Gör modellen rätt stor, ställ den på marken och mitt på punkten.
+    function forbered(objekt, hojd) {
+      objekt.traverse((o) => {
+        if (!o.isMesh) return;
+        // Samma sorts material som resten av spelet, så att färgerna ser likadana ut
+        const byt = (mt) => {
+          const ny = new THREE.MeshLambertMaterial({
+            color: mt.color ? mt.color.clone() : 0xffffff,
+            map: mt.map || null, transparent: mt.transparent, opacity: mt.opacity, side: mt.side
+          });
+          if (ny.map) ny.map.encoding = THREE.LinearEncoding;
+          return ny;
+        };
+        o.material = Array.isArray(o.material) ? o.material.map(byt) : byt(o.material);
+        o.castShadow = true;
+        o.receiveShadow = true;
+      });
+      let box = new THREE.Box3().setFromObject(objekt);
+      const storlek = box.getSize(new THREE.Vector3());
+      if (storlek.y > 0) objekt.scale.multiplyScalar(hojd / storlek.y);
+      objekt.updateMatrixWorld(true);
+      box = new THREE.Box3().setFromObject(objekt);
+      const mitt = box.getCenter(new THREE.Vector3());
+      objekt.position.x -= mitt.x;
+      objekt.position.z -= mitt.z;
+      objekt.position.y -= box.min.y;
+      const g = new THREE.Group();
+      g.add(objekt);
+      return g;
+    }
+
+    function laddaModeller() {
+      const laddare = new GLTFLoader();
+      return Promise.all(Object.entries(MODELL_FILER).map(([namn, [fil, hojd]]) => new Promise((klar) => {
+        laddare.load(fil,
+          (gltf) => { MODELL[namn] = forbered(gltf.scene, hojd); klar(); },
+          undefined,
+          () => klar()); // filen finns inte (än) – då används figuren som är byggd med kod
+      })));
+    }
+    const kopia = (namn) => MODELL[namn].clone(true);
+    // Mynten ska glänsa lite
+    function lysande(namn, farg) {
+      if (MODELL[namn]) MODELL[namn].traverse((o) => { if (o.isMesh) o.material.emissive = new THREE.Color(farg); });
+    }
+    const slump = (lista) => lista[Math.floor(Math.random() * lista.length)];
+
+    // Elevens figur från Blender. Armar och ben hittas på sina namn.
+    function egenFigur(namn) {
+      const grupp = new THREE.Group();
+      const kropp = new THREE.Group();
+      grupp.add(kropp);
+      const m = kopia(namn);
+      kropp.add(m);
+      const hitta = (n) => m.getObjectByName(n) || new THREE.Group();
+      return { g: grupp, grupp, kropp, ben: [hitta("BenV"), hitta("BenH")], armar: [hitta("ArmV"), hitta("ArmH")], mantel: null };
+    }
+
     function byggHjalte(typ) {
+      if (MODELL[typ]) return egenFigur(typ);
       const h = HJALTAR[typ];
       const grupp = new THREE.Group();
       const kropp = new THREE.Group();
@@ -617,6 +722,7 @@
     }
 
     function byggOzi() {
+      if (MODELL.ozi) return egenFigur("ozi");
       // Grön taggboll med ett stort argt öga
       const g = new THREE.Group();
       const kropp = new THREE.Group();
@@ -642,6 +748,7 @@
     }
 
     function byggLudde() {
+      if (MODELL.ludde) return egenFigur("ludde");
       // Lila monster med horn, arga ögon och tänder
       const g = new THREE.Group();
       const kropp = new THREE.Group();
@@ -665,6 +772,7 @@
     }
 
     function byggFlagga() {
+      if (MODELL.flagga) return kopia("flagga");
       const g = new THREE.Group();
       del(new THREE.BoxGeometry(0.8, 0.4, 0.8), 0x6b7280, 0, 0.2, 0, g);
       del(new THREE.CylinderGeometry(0.06, 0.06, 4.2, 8), 0xe5e7eb, 0, 2.3, 0, g);
@@ -682,6 +790,8 @@
       const g = new THREE.Group();
       const kung = new THREE.Group();
       g.add(kung);
+      if (MODELL.kung) kung.add(kopia("kung"));
+      else {
       del(new THREE.CapsuleGeometry(0.4, 0.5, 6, 12), 0xb91c1c, 0, 0.75, 0, kung);
       const krage = del(new THREE.TorusGeometry(0.33, 0.09, 8, 16), 0xffffff, 0, 1.15, 0, kung);
       krage.rotation.x = Math.PI / 2;
@@ -692,6 +802,7 @@
       for (let i = 0; i < 6; i++) {
         const v = (i / 6) * Math.PI * 2;
         del(new THREE.ConeGeometry(0.06, 0.18, 6), 0xfacc15, Math.sin(v) * 0.24, 2.03, Math.cos(v) * 0.24, kung);
+      }
       }
       const galler = new THREE.Group();
       g.add(galler);
@@ -705,7 +816,26 @@
       return { g, kung, galler, oppnar: false };
     }
 
+    const DEKOR_MODELLER = {
+      trad:   ["trad1", "trad2", "trad3", "tall"],
+      kaktus: ["kaktus", "palm"]
+    };
+    // Små saker som strös ut på marken
+    const SMASAKER = {
+      ang:  ["buske", "storBuske", "blommaRod", "blommaGul", "blommaLila", "svamp", "gras", "gras", "litenSten"],
+      oken: ["litenSten", "sten2", "litenKaktus", "gras"],
+      borg: ["litenSten", "sten", "hogSten2"]
+    };
+
     function byggDekor(typ, x, y, z, foralder) {
+      const modeller = (DEKOR_MODELLER[typ] || []).filter((n) => MODELL[n]);
+      if (modeller.length) {
+        const m = kopia(slump(modeller));
+        m.position.set(x, y, z);
+        m.rotation.y = Math.random() * Math.PI * 2;
+        foralder.add(m);
+        return m;
+      }
       const g = new THREE.Group();
       g.position.set(x, y, z);
       foralder.add(g);
@@ -798,9 +928,18 @@
     }
 
     function skapaMynt(x, y, z, samlad = false) {
-      const m = new THREE.Mesh(myntForm, myntMaterial);
-      m.rotation.order = "YXZ";
-      m.rotation.x = Math.PI / 2; // står upp som ett riktigt mynt
+      let m;
+      if (MODELL.mynt) {
+        // Kenney-myntet. Gruppen flyttas ner så att myntets mitt hamnar på y.
+        m = new THREE.Group();
+        const inre = kopia("mynt");
+        inre.position.y = -0.35;
+        m.add(inre);
+      } else {
+        m = new THREE.Mesh(myntForm, myntMaterial);
+        m.rotation.order = "YXZ";
+        m.rotation.x = Math.PI / 2; // står upp som ett riktigt mynt
+      }
       m.position.set(x, y, z);
       m.castShadow = true;
       banGrupp.add(m);
@@ -864,6 +1003,20 @@
           // Inget framme på första marken, då skymmer det kameran
           if (i > 0) byggDekor(tema.dekor, d.x + sx * (d.w / 2 - 1), d.topp, d.z + d.d / 2 - 1.2, banGrupp);
           byggDekor(tema.dekor, d.x - sx * (d.w / 2 - 1), d.topp, d.z - d.d / 2 + 1.2, banGrupp);
+        }
+        // Strö ut små saker längs kanterna
+        const smasaker = SMASAKER[bana.tema].filter((n) => MODELL[n]);
+        if (!smasaker.length) return;
+        const antal = Math.floor((d.w * d.d) / 18);
+        for (let k = 0; k < antal; k++) {
+          const sida = Math.random() < 0.5 ? -1 : 1;
+          const x = d.x + sida * (d.w / 2 - 0.4 - Math.random() * 1.6);
+          const z = d.z + (Math.random() - 0.5) * (d.d - 1);
+          const m = kopia(slump(smasaker));
+          m.position.set(x, d.topp, z);
+          m.rotation.y = Math.random() * Math.PI * 2;
+          m.scale.setScalar(0.8 + Math.random() * 0.5);
+          banGrupp.add(m);
         }
       });
 
@@ -1691,10 +1844,16 @@
       requestAnimationFrame(loop);
     }
 
+    $("knappStart").disabled = true;
+    $("knappStart").textContent = "Laddar...";
+    requestAnimationFrame(loop);
+    await laddaModeller();
+    lysande("mynt", 0x5a3a00);
     laddaBana(0);
     stoppaMusik();
     $("banTitel").style.opacity = 0;
-    requestAnimationFrame(loop);
+    $("knappStart").disabled = false;
+    $("knappStart").textContent = "Starta!";
   </script>
 </body>
 </html>
