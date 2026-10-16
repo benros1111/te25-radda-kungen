@@ -197,6 +197,13 @@
       <button class="val" data-svar="svar">Svår</button>
     </div>
     <p id="svarText"></p>
+    <h2>Välj bana</h2>
+    <div>
+      <button class="val vald" data-bana="0">1. Gröna ängen</button>
+      <button class="val" data-bana="1">2. Solöknen</button>
+      <button class="val" data-bana="2">3. Ozis borg</button>
+      <button class="val" data-bana="3">4. Mörka herrgården</button>
+    </div>
     <button id="knappStart">Starta!</button>
     <button id="knappTopplista">🏆 Topplista</button>
   </div>
@@ -1415,7 +1422,7 @@
       poang = 0;
       besegrade = 0;
       poangVidBanStart = 0;
-      laddaBana(0);
+      laddaBana(valdBana);
       lage = "spelar";
       gomSkarmar();
     }
@@ -1573,6 +1580,11 @@
       $("svarText").textContent = SVARIGHETER[valdSvar].text;
     });
     $("svarText").textContent = SVARIGHETER.medel.text;
+    let valdBana = 0;
+    document.querySelectorAll("[data-bana]").forEach((k) => k.onclick = () => {
+      valdBana = Number(k.dataset.bana);
+      document.querySelectorAll("[data-bana]").forEach((a) => a.classList.toggle("vald", a === k));
+    });
     $("knappStart").onclick = nyttSpel;
     $("knappNasta").onclick = () => { gomSkarmar(); poangVidBanStart = poang; laddaBana(banNr + 1); lage = "spelar"; };
     $("knappIgen").onclick = () => {
