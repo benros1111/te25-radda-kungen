@@ -44,6 +44,11 @@
       font-size: 16px;
       text-shadow: 1px 1px 0 #000;
     }
+    #vinjett {
+      position: fixed; inset: 0; pointer-events: none; display: none;
+      background: radial-gradient(ellipse at center, rgba(0,0,0,0) 45%, rgba(0,0,0,0.75) 100%);
+    }
+    .inne.mobil #vinjett { display: block; }
     #banTitel {
       position: fixed;
       top: 22%;
@@ -165,6 +170,7 @@
   <div id="hud"></div>
   <button id="ljudKnapp" title="Ljud på/av (M)">🔊</button>
   <div id="hjalp">Pilar/WASD = spring · Mellanslag = hoppa (håll in = högre) · M = ljud</div>
+  <div id="vinjett"></div>
   <div id="banTitel"></div>
 
   <!-- Mobil: joystick till vänster, hoppknapp till höger -->
@@ -177,7 +183,7 @@
   <!-- Startskärm -->
   <div id="startSkarm" class="skarm">
     <h1>Rädda Kung Jensen!</h1>
-    <p>Ozi, Ludde och lejonet Husein har kidnappat Kung Jensen. Ta dig igenom tre banor. Hoppa på fiendernas huvuden. Slå i lådorna med huvudet för att få mynt!</p>
+    <p>Ozi, Ludde och lejonet Husein har kidnappat Kung Jensen. Ta dig igenom fyra banor. Hoppa på fiendernas huvuden. Slå i lådorna med huvudet för att få mynt!</p>
     <h2>Välj hjälte</h2>
     <div>
       <button class="val vald" data-hjalte="mustafa">Super Mustafa</button>
@@ -340,14 +346,44 @@
         ],
         fiender: [["ludde", 0, -21], ["ozi", -3, -26], ["ozi", 0, -51], ["ludde", 3, -56], ["ozi", -3, -58],
                   ["ludde", -4, -80], ["ludde", 4, -86], ["ozi", 0, -89], ["lejon", 0, -82, 5]],
-        mal: { typ: "kung", x: 0, z: -108 },
+        mal: { typ: "flagga", x: 0, z: -108 },
         boss: { x: 0, z: -101 }
+      },
+      {
+        // Mörk skräckstil: varma lampor, djupa skuggor, filmkorn och fasta kameravinklar
+        namn: "Den mörka herrgården", tema: "herrgard",
+        plattformar: [
+          P(0, 0, 8, 12, 0), P(0, -14, 4, 16, 0), P(0, -30, 4, 10, 0), P(0, -44, 10, 14, 0),
+          P(-3, -55, 3, 3, 1.2, "tra"), P(0, -59, 3, 3, 2.4, "tra"), P(3, -63, 3, 3, 3.4, "tra"),
+          P(0, -72, 8, 12, 3), P(0, -88, 12, 14, 3)
+        ],
+        block: [[0, 3, -14], [-1, 3, -44], [0, 3, -44], [1, 3, -44], [0, 6, -70]],
+        mynt: [
+          ...rad(-2, 3, 2, 3, 1, 3), ...rad(0, -8, 0, -20, 1, 4), [0, 2.5, -23.5], ...rad(0, -27, 0, -33, 1, 3),
+          ...rad(-4, -40, 4, -40, 1, 5), ...rad(-4, -48, 4, -48, 1, 5), [-3, 2.2, -55], [0, 3.4, -59], [3, 4.4, -63],
+          ...rad(-3, -75, 3, -75, 4, 4), ...rad(-5, -84, 5, -84, 4, 6)
+        ],
+        fiender: [["ozi", 0, -12, 1.2], ["ludde", 0, -30, 1.2], ["ozi", -3, -42, 3], ["ludde", 3, -47, 3],
+                  ["lejon", 0, -73, 2.5], ["ozi", -4, -86, 4], ["ludde", 4, -90, 4]],
+        mal: { typ: "kung", x: 0, z: -92 },
+        // Fasta kameror: när spelaren går in i ett område byter kameran vinkel
+        kameror: [
+          { fran: 99, till: -6, pos: [3.2, 4.4, 5.4] },
+          { fran: -6, till: -22, pos: [-1.5, 3.6, -4.5] },
+          { fran: -22, till: -36, pos: [1.5, 3.8, -21] },
+          { fran: -36, till: -52, pos: [-4.4, 4.8, -36.5] },
+          { fran: -52, till: -66, pos: [4.5, 6.5, -50.5] },
+          { fran: -66, till: -79.5, pos: [-3.6, 7.6, -65.5] },
+          { fran: -79.5, till: -999, pos: [5.6, 8.4, -80.5] }
+        ]
       }
     ];
 
     const TEMAN = {
       ang:  { himmel: 0x87ceeb, dimma: 0xb9d4e6, dis: 6, rayleigh: 1.6, solFarg: 0xfff1dc, solStyrka: 2.6, ljus: 0.55, topp: "gras", sida: "jord",     kulle: 0x4ade80, dekor: "trad",   moln: true },
       oken: { himmel: 0xffcf8a, dimma: 0xe8cfa4, dis: 12, rayleigh: 1.2, solFarg: 0xffe2b8, solStyrka: 3.0, ljus: 0.55, topp: "sand", sida: "sandsten", kulle: 0xe9b872, dekor: "kaktus", moln: true },
+      herrgard: { himmel: 0x050403, dimma: 0x0b0806, dis: 20, rayleigh: 3, solHojd: 0.05, solFarg: 0xff9a60, solStyrka: 0, ljus: 0.3,
+                  topp: "tra", sida: "tegel", kulle: 0x000000, dekor: "ingen", moln: false, inne: true },
       borg: { himmel: 0x2a1630, dimma: 0x3a1a2a, dis: 20, rayleigh: 3, solHojd: 0.05, solFarg: 0xff9a60, solStyrka: 1.6, ljus: 0.35, topp: "sten", sida: "tegel",    kulle: 0x3b2a3f, dekor: "fackla", moln: false, lava: true }
     };
 
@@ -421,6 +457,12 @@
                 74, 72, 69, null, 72, 69, 67, null, 69, null, 72, 69, 69, null, null, null],
         bas: [45, 52, 45, 52, 50, 57, 50, 57, 45, 52, 43, 50, 45, 52, 45, null]
       },
+      herrgard: {
+        takt: 0.22,
+        noter: [57, null, 60, null, 64, null, 63, null, 57, null, 60, null, 62, null, null, null,
+                56, null, 59, null, 62, null, 61, null, 57, null, null, null, null, null, null, null],
+        bas: [45, null, 45, null, 44, null, 44, null, 45, null, 45, null, 40, null, null, null]
+      },
       borg: {
         takt: 0.15,
         noter: [69, null, 72, 76, 75, null, 72, 69, 71, 72, 71, null, 64, null, 66, 68,
@@ -486,6 +528,20 @@
     Object.assign(sol.shadow.camera, { left: -18, right: 18, top: 18, bottom: -18, near: 1, far: 60 });
     scen.add(sol, sol.target);
 
+    // Lampor inomhus: 6 lampor flyttas till de lampor som är närmast spelaren
+    const lampPool = [];
+    for (let i = 0; i < 6; i++) {
+      const l = new THREE.PointLight(0xffa25a, 0, 13, 1.6);
+      if (i === 0) {
+        l.castShadow = true;
+        l.shadow.mapSize.set(HOG_KVALITET ? 512 : 256, HOG_KVALITET ? 512 : 256);
+        l.shadow.bias = -0.002;
+      }
+      scen.add(l);
+      lampPool.push(l);
+    }
+    let lampPlatser = [];
+
     // Verklig himmel med sol (fysisk modell av hur ljus sprids i luften)
     const himmel = new Sky();
     himmel.scale.setScalar(200);
@@ -511,12 +567,33 @@
       scen.environment = miljoKarta;
     }
 
+    // Skräckfilter: mörka kanter (vinjett), filmkorn och lite blekta, varma färger
+    const SKRACK_FILTER = {
+      uniforms: { tDiffuse: { value: null }, tid: { value: 0 }, styrka: { value: 0 } },
+      vertexShader: "varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }",
+      fragmentShader: `
+        uniform sampler2D tDiffuse; uniform float tid; uniform float styrka; varying vec2 vUv;
+        float slump(vec2 p) { return fract(sin(dot(p, vec2(12.9898, 78.233)) + tid) * 43758.5453); }
+        void main() {
+          vec4 c = texture2D(tDiffuse, vUv);
+          float gra = dot(c.rgb, vec3(0.299, 0.587, 0.114));
+          vec3 f = mix(c.rgb, gra * vec3(1.08, 0.95, 0.78), 0.4 * styrka);          // blekt och varmt
+          float d = distance(vUv, vec2(0.5));
+          f *= mix(1.0, smoothstep(0.82, 0.22, d), styrka);                        // mörka kanter
+          f += (slump(floor(vUv * vec2(960.0, 540.0))) - 0.5) * 0.035 * styrka;   // filmkorn
+          gl_FragColor = vec4(max(f, 0.0), c.a);
+        }`
+    };
+    let skrackFilter = null;
+
     // Glow (bloom) runt ljusa saker som mynt, lava och facklor – bara på datorn
     let effekter = null;
     if (HOG_KVALITET) {
       effekter = new EffectComposer(ritare);
       effekter.addPass(new RenderPass(scen, kamera));
       effekter.addPass(new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.35, 0.5, 0.88));
+      skrackFilter = new ShaderPass(SKRACK_FILTER);
+      effekter.addPass(skrackFilter);
       effekter.addPass(new ShaderPass(GammaCorrectionShader));
     }
 
@@ -929,7 +1006,8 @@
     const SMASAKER = {
       ang:  ["buske", "storBuske", "blommaRod", "blommaGul", "blommaLila", "svamp", "gras", "gras", "litenSten"],
       oken: ["litenSten", "sten2", "litenKaktus", "gras"],
-      borg: ["litenSten", "sten", "hogSten2"]
+      borg: ["litenSten", "sten", "hogSten2"],
+      herrgard: []
     };
 
     function byggDekor(typ, x, y, z, foralder) {
@@ -1085,13 +1163,21 @@
       tema = TEMAN[bana.tema];
       plattformar = []; fiender = []; mynt = []; block = []; partiklar = [];
 
-      scen.background = tema.lava ? new THREE.Color(tema.himmel) : null;
-      himmel.visible = !tema.lava;
-      scen.fog = new THREE.Fog(tema.dimma, 30, 120);
+      scen.background = tema.lava || tema.inne ? new THREE.Color(tema.himmel) : null;
+      himmel.visible = !tema.lava && !tema.inne;
+      scen.fog = tema.inne ? new THREE.Fog(tema.dimma, 8, 30) : new THREE.Fog(tema.dimma, 30, 120);
       himmelsljus.intensity = tema.ljus;
+      himmelsljus.color.set(tema.inne ? 0x8a6a50 : 0xdfefff);
       sol.color.set(tema.solFarg);
       sol.intensity = tema.solStyrka;
+      sol.castShadow = !tema.inne;
       stallHimmel(tema);
+      if (tema.inne) scen.environment = null;   // ingen himmel som speglas inomhus
+      lampPlatser = [];
+      lampPool.forEach((l) => (l.intensity = 0));
+      if (skrackFilter) skrackFilter.uniforms.styrka.value = tema.inne ? 1 : 0;
+      document.body.classList.toggle("inne", !!tema.inne);
+      kameraOmrade = null;
 
       bana.plattformar.forEach(byggPlattform);
       bana.block.forEach(byggBlock);
@@ -1109,9 +1195,11 @@
       malFigur.g.position.set(mal.x, mal.y, mal.z);
       banGrupp.add(malFigur.g);
 
+      if (tema.inne) byggHerrgard();
+
       // Dekor på de stora markerna
       bana.plattformar.forEach((d, i) => {
-        if (d.typ !== "mark" || d.w < 10) return;
+        if (tema.inne || d.typ !== "mark" || d.w < 10) return;
         for (const sx of [-1, 1]) {
           // Inget framme på första marken, då skymmer det kameran
           if (i > 0) byggDekor(tema.dekor, d.x + sx * (d.w / 2 - 1), d.topp, d.z + d.d / 2 - 1.2, banGrupp);
@@ -1135,7 +1223,7 @@
 
       // Kullar långt bort
       const slutZ = Math.min(...bana.plattformar.map((d) => d.z));
-      for (let z = 20; z > slutZ - 40; z -= 18) {
+      for (let z = 20; z > slutZ - 40 && !tema.inne; z -= 18) {
         for (const sx of [-1, 1]) {
           const x = sx * (38 + Math.random() * 15);
           if (tema.lava) {
@@ -1178,6 +1266,113 @@
       startaMusik(bana.tema);
     }
 
+    // Tapet: mörkgrön med ett mönster av ruter
+    const tapetTextur = textur((x, s) => {
+      x.fillStyle = "#33463a"; x.fillRect(0, 0, s, s);
+      x.strokeStyle = "#4a614d"; x.lineWidth = 3;
+      for (let i = -1; i < 3; i++) {
+        x.beginPath(); x.moveTo(i * 32, 0); x.lineTo(i * 32 + 32, 32); x.lineTo(i * 32, 64); x.lineTo(i * 32 - 32, 32); x.closePath(); x.stroke();
+      }
+      x.fillStyle = "#3a4a35";
+      for (let i = 0; i < 2; i++) for (let j = 0; j < 2; j++) x.fillRect(i * 32 + 14, j * 32 + 14, 4, 4);
+    }, 64);
+    tapetTextur.magFilter = THREE.LinearFilter;
+
+    function tavlaTextur() {
+      // En mörk gammal oljemålning: himmel, berg och en måne
+      const t = textur((x, s) => {
+        const g = x.createLinearGradient(0, 0, 0, s);
+        g.addColorStop(0, "#2a2418"); g.addColorStop(1, "#4a3a22");
+        x.fillStyle = g; x.fillRect(0, 0, s, s);
+        x.fillStyle = "#c9b27a"; x.beginPath(); x.arc(s * (0.25 + Math.random() * 0.5), s * 0.3, s * 0.08, 0, 7); x.fill();
+        x.fillStyle = "#1a160f"; x.beginPath(); x.moveTo(0, s); x.lineTo(s * 0.3, s * 0.55); x.lineTo(s * 0.55, s * 0.75);
+        x.lineTo(s * 0.8, s * 0.5); x.lineTo(s, s); x.fill();
+      }, 64);
+      t.magFilter = THREE.LinearFilter;
+      return t;
+    }
+
+    function vagg(x, z, w, d, golv, hojd = 4.2) {
+      // Vägg med tapet, träpanel nertill och en list. Den stoppar spelaren.
+      const g = new THREE.Group();
+      g.position.set(x, golv, z);
+      banGrupp.add(g);
+      const tapet = new THREE.Mesh(new THREE.BoxGeometry(w, hojd, d), new THREE.MeshStandardMaterial({
+        map: upprepa(tapetTextur, Math.max(w, d) / 1.2, hojd / 1.2), roughness: 0.9 }));
+      tapet.position.y = hojd / 2;
+      const panel = new THREE.Mesh(new THREE.BoxGeometry(w + 0.06, 1.1, d + 0.06), texturMaterial("tra", Math.max(w, d) / 2, 0.6, 0x5a3a22));
+      panel.position.y = 0.55;
+      const list = new THREE.Mesh(new THREE.BoxGeometry(w + 0.1, 0.08, d + 0.1), new THREE.MeshStandardMaterial({ color: 0x3a2414, roughness: 0.6 }));
+      list.position.y = 1.12;
+      for (const m of [tapet, panel, list]) { m.castShadow = true; m.receiveShadow = true; g.add(m); }
+      plattformar.push({ rorelse: 0, flyttX: 0, minX: x - w / 2, maxX: x + w / 2, minZ: z - d / 2, maxZ: z + d / 2,
+                         topp: golv + hojd, botten: golv - 6 });
+    }
+
+    function byggHerrgard() {
+      bana.plattformar.forEach((d, i) => {
+        if (d.typ !== "mark") return;
+        const golv = d.topp;
+        for (const sx of [-1, 1]) {
+          const vx = d.x + sx * (d.w / 2 + 0.2);
+          vagg(vx, d.z, 0.4, d.d, golv);
+          // Väggens insida: lampor, tavlor och dörrar varannan meter
+          const inne = d.x + sx * (d.w / 2 - 0.02);
+          for (let z = d.z + d.d / 2 - 2; z > d.z - d.d / 2 + 1; z -= 3) {
+            const nr = Math.round(z / 3) + (sx > 0 ? 1 : 0);
+            if (nr % 2 === 0) {
+              // Vägglampa med varmt sken
+              const arm = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.06, 0.06), new THREE.MeshStandardMaterial({ color: 0x8a6a2a, metalness: 0.8, roughness: 0.4 }));
+              arm.position.set(inne - sx * 0.12, golv + 2.3, z);
+              const kupa = new THREE.Mesh(new THREE.SphereGeometry(0.12, 12, 8), new THREE.MeshBasicMaterial({ color: 0xffd08a }));
+              kupa.position.set(inne - sx * 0.25, golv + 2.42, z);
+              banGrupp.add(arm, kupa);
+              lampPlatser.push(new THREE.Vector3(inne - sx * 0.35, golv + 2.45, z));
+            } else if (nr % 3 === 0) {
+              // Dörr
+              const dorr = new THREE.Mesh(new THREE.BoxGeometry(0.08, 2.3, 1.1), texturMaterial("tra", 0.6, 1.2, 0x4a2c18));
+              dorr.position.set(inne - sx * 0.04, golv + 1.15, z);
+              const handtag = new THREE.Mesh(new THREE.SphereGeometry(0.05, 8, 6), new THREE.MeshStandardMaterial({ color: 0xc9a24a, metalness: 1, roughness: 0.3 }));
+              handtag.position.set(inne - sx * 0.1, golv + 1.1, z - 0.4);
+              dorr.receiveShadow = true;
+              banGrupp.add(dorr, handtag);
+            } else {
+              // Tavla med guldram
+              const ram = new THREE.Mesh(new THREE.BoxGeometry(0.08, 1.0, 0.8), new THREE.MeshStandardMaterial({ color: 0x9a7a30, metalness: 0.7, roughness: 0.45 }));
+              ram.position.set(inne - sx * 0.04, golv + 2.1, z);
+              const bild = new THREE.Mesh(new THREE.PlaneGeometry(0.62, 0.82), new THREE.MeshStandardMaterial({ map: tavlaTextur(), roughness: 0.8 }));
+              bild.position.set(inne - sx * 0.09, golv + 2.1, z);
+              bild.rotation.y = -sx * Math.PI / 2;
+              banGrupp.add(ram, bild);
+            }
+          }
+        }
+        // Bakvägg i första och sista rummet
+        if (i === 0) vagg(d.x, d.z + d.d / 2 + 0.2, d.w + 0.8, 0.4, golv);
+        if (i === bana.plattformar.length - 1) vagg(d.x, d.z - d.d / 2 - 0.2, d.w + 0.8, 0.4, golv);
+        // Mattor på golvet
+        const matta = new THREE.Mesh(new THREE.PlaneGeometry(Math.min(2.2, d.w - 1), d.d - 1.5), new THREE.MeshStandardMaterial({ color: 0x4a0f12, roughness: 1 }));
+        matta.rotation.x = -Math.PI / 2;
+        matta.position.set(d.x, golv + 0.012, d.z);
+        matta.receiveShadow = true;
+        banGrupp.add(matta);
+      });
+    }
+
+    // Flytta lamporna till de lampor som är närmast spelaren
+    function uppdateraLampor() {
+      if (!lampPlatser.length) return;
+      const nara = lampPlatser
+        .map((p) => ({ p, d: (p.x - spelare.x) ** 2 + (p.z - spelare.z) ** 2 + (p.y - spelare.y) ** 2 }))
+        .sort((a, b) => a.d - b.d);
+      lampPool.forEach((l, i) => {
+        const n = nara[i];
+        if (!n) { l.intensity = 0; return; }
+        l.position.copy(n.p);
+        l.intensity = 6.5 * (0.92 + Math.random() * 0.08); // lite fladdrande ljus
+      });
+    }
+
     function visaBanTitel(text) {
       const t = $("banTitel");
       t.textContent = text;
@@ -1198,6 +1393,7 @@
     let lage = "meny"; // "meny", "spelar", "mellan" eller "slut"
     const kameraMal = new THREE.Vector3();
     const kameraTitt = new THREE.Vector3();
+    let kameraOmrade = null;
 
     function tillbakaTillStart() {
       Object.assign(spelare, { x: startPunkt.x, y: startPunkt.y, z: startPunkt.z, vx: 0, vz: 0,
@@ -1771,7 +1967,7 @@
           boss = null;
           malFigur.oppnar = true;
           spelaLjud("burOppen");
-          visaBanTitel("Buren är öppen! Rädda kungen!");
+          visaBanTitel(mal.typ === "kung" ? "Buren är öppen! Rädda kungen!" : "Jätte-Ozi är besegrad! Spring till flaggan!");
         }
         return;
       }
@@ -1941,12 +2137,25 @@
         figur.grupp.rotation.y = spelare.riktning;
         figur.grupp.visible = spelare.skyddad === 0 || Math.floor(spelare.skyddad / 5) % 2 === 0;
 
-        // Kameran följer mjukt efter. Står mobilen upp backar kameran mer.
-        const staende = kamera.aspect < 0.9;
-        kameraMal.set(spelare.x, spelare.y + (staende ? 7 : 5.5), spelare.z + (staende ? 13 : 9.5));
-        kamera.position.lerp(kameraMal, 0.08);
-        kameraTitt.lerp(tittPunkt.set(spelare.x, spelare.y + 1, spelare.z - 3), 0.15);
-        kamera.lookAt(kameraTitt);
+        if (bana.kameror) {
+          // Fasta kameravinklar: kameran står still i ett hörn och vrider sig efter spelaren
+          const omrade = bana.kameror.find((k) => spelare.z <= k.fran && spelare.z > k.till) || bana.kameror[0];
+          if (omrade !== kameraOmrade) {
+            kameraOmrade = omrade;
+            kamera.position.set(...omrade.pos);           // klipp direkt till ny vinkel
+            kameraTitt.set(spelare.x, spelare.y + 1, spelare.z);
+          }
+          kameraTitt.lerp(tittPunkt.set(spelare.x, spelare.y + 1, spelare.z), 0.1);
+          kamera.lookAt(kameraTitt);
+          uppdateraLampor();
+        } else {
+          // Kameran följer mjukt efter. Står mobilen upp backar kameran mer.
+          const staende = kamera.aspect < 0.9;
+          kameraMal.set(spelare.x, spelare.y + (staende ? 7 : 5.5), spelare.z + (staende ? 13 : 9.5));
+          kamera.position.lerp(kameraMal, 0.08);
+          kameraTitt.lerp(tittPunkt.set(spelare.x, spelare.y + 1, spelare.z - 3), 0.15);
+          kamera.lookAt(kameraTitt);
+        }
         if (skak > 0.01) {
           kamera.position.x += (Math.random() - 0.5) * skak;
           kamera.position.y += (Math.random() - 0.5) * skak;
@@ -1969,6 +2178,7 @@
         $("hud").textContent = "";
       }
       himmel.position.copy(kamera.position);
+      if (skrackFilter) skrackFilter.uniforms.tid.value = (performance.now() / 1000) % 100;
       if (effekter) effekter.render();
       else ritare.render(scen, kamera);
     }
