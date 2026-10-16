@@ -1,0 +1,3 @@
+Texturer från Poly Haven (polyhaven.com), licens CC0 – fria att använda.
+gras = sparse_grass, klippa = rocky_terrain_02, sand = coast_sand_01, sandsten = sandstone_blocks_08,
+sten = rough_block_wall, tegel = castle_brick_07, tra = weathered_planks (1k JPG)

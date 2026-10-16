@@ -238,6 +238,13 @@
   <script type="module">
     import * as THREE from "three";
     import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+    import { Sky } from "three/addons/objects/Sky.js";
+    import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
+    import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
+    import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
+    import { ShaderPass } from "three/addons/postprocessing/ShaderPass.js";
+    import { GammaCorrectionShader } from "three/addons/shaders/GammaCorrectionShader.js";
+    THREE.ColorManagement.legacyMode = false; // riktiga färger (som i moderna spel)
 
     // =====================================================
     // ===== INSTÄLLNINGAR – testa att ändra! ==============
@@ -339,9 +346,9 @@
     ];
 
     const TEMAN = {
-      ang:  { himmel: 0x87ceeb, ljus: 0.85, topp: "gras", sida: "jord",     kulle: 0x4ade80, dekor: "trad",   moln: true },
-      oken: { himmel: 0xffcf8a, ljus: 0.9,  topp: "sand", sida: "sandsten", kulle: 0xe9b872, dekor: "kaktus", moln: true },
-      borg: { himmel: 0x2a1630, ljus: 0.55, topp: "sten", sida: "tegel",    kulle: 0x3b2a3f, dekor: "fackla", moln: false, lava: true }
+      ang:  { himmel: 0x87ceeb, dimma: 0xb9d4e6, dis: 6, rayleigh: 1.6, solFarg: 0xfff1dc, solStyrka: 2.6, ljus: 0.55, topp: "gras", sida: "jord",     kulle: 0x4ade80, dekor: "trad",   moln: true },
+      oken: { himmel: 0xffcf8a, dimma: 0xe8cfa4, dis: 12, rayleigh: 1.2, solFarg: 0xffe2b8, solStyrka: 3.0, ljus: 0.55, topp: "sand", sida: "sandsten", kulle: 0xe9b872, dekor: "kaktus", moln: true },
+      borg: { himmel: 0x2a1630, dimma: 0x3a1a2a, dis: 20, rayleigh: 3, solHojd: 0.05, solFarg: 0xff9a60, solStyrka: 1.6, ljus: 0.35, topp: "sten", sida: "tegel",    kulle: 0x3b2a3f, dekor: "fackla", moln: false, lava: true }
     };
 
     // =====================================================
@@ -457,25 +464,67 @@
     const $ = (id) => document.getElementById(id);
     const scen = new THREE.Scene();
     const kamera = new THREE.PerspectiveCamera(60, innerWidth / innerHeight, 0.1, 250);
+    // Datorn får full grafik. Mobilen får lättare effekter så att spelet inte laggar.
+    const HOG_KVALITET = !matchMedia("(pointer: coarse)").matches;
     const ritare = new THREE.WebGLRenderer({ antialias: true });
     ritare.setSize(innerWidth, innerHeight);
-    ritare.setPixelRatio(Math.min(devicePixelRatio, 1.5));
+    ritare.setPixelRatio(Math.min(devicePixelRatio, HOG_KVALITET ? 1.5 : 1.25));
+    ritare.outputEncoding = THREE.sRGBEncoding;
+    ritare.toneMapping = THREE.ACESFilmicToneMapping; // filmisk färgton, som i moderna spel
+    ritare.toneMappingExposure = 0.85;
     ritare.shadowMap.enabled = true;
     ritare.shadowMap.type = THREE.PCFSoftShadowMap;
     document.body.prepend(ritare.domElement);
 
-    const himmelsljus = new THREE.HemisphereLight(0xffffff, 0x556633, 0.8);
+    const himmelsljus = new THREE.HemisphereLight(0xdfefff, 0x4a5a3a, 0.55);
     scen.add(himmelsljus);
-    const sol = new THREE.DirectionalLight(0xffffff, 0.75);
+    const sol = new THREE.DirectionalLight(0xfff1dc, 2.6);
     sol.castShadow = true;
-    sol.shadow.mapSize.set(1024, 1024);
+    sol.shadow.mapSize.set(HOG_KVALITET ? 2048 : 1024, HOG_KVALITET ? 2048 : 1024);
+    sol.shadow.bias = -0.0004;
+    sol.shadow.normalBias = 0.03;
     Object.assign(sol.shadow.camera, { left: -18, right: 18, top: 18, bottom: -18, near: 1, far: 60 });
     scen.add(sol, sol.target);
+
+    // Verklig himmel med sol (fysisk modell av hur ljus sprids i luften)
+    const himmel = new Sky();
+    himmel.scale.setScalar(200);
+    scen.add(himmel);
+    const SOL_RIKTNING = new THREE.Vector3(0.45, 0.6, 0.35).normalize();
+    // Himlen speglas i allt som glänser (mynt, guld, metall)
+    const pmrem = new THREE.PMREMGenerator(ritare);
+    let miljoKarta = null;
+    function stallHimmel(tema) {
+      const u = himmel.material.uniforms;
+      u.turbidity.value = tema.dis;
+      u.rayleigh.value = tema.rayleigh;
+      u.mieCoefficient.value = 0.005;
+      u.mieDirectionalG.value = 0.8;
+      u.sunPosition.value.copy(tema.solHojd ? SOL_RIKTNING.clone().setY(tema.solHojd).normalize() : SOL_RIKTNING);
+      const s = new THREE.Scene();
+      const kopiaHimmel = new Sky();
+      kopiaHimmel.scale.setScalar(100);
+      kopiaHimmel.material.uniforms = THREE.UniformsUtils.clone(u);
+      s.add(kopiaHimmel);
+      if (miljoKarta) miljoKarta.dispose();
+      miljoKarta = pmrem.fromScene(s).texture;
+      scen.environment = miljoKarta;
+    }
+
+    // Glow (bloom) runt ljusa saker som mynt, lava och facklor – bara på datorn
+    let effekter = null;
+    if (HOG_KVALITET) {
+      effekter = new EffectComposer(ritare);
+      effekter.addPass(new RenderPass(scen, kamera));
+      effekter.addPass(new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.35, 0.5, 0.88));
+      effekter.addPass(new ShaderPass(GammaCorrectionShader));
+    }
 
     addEventListener("resize", () => {
       kamera.aspect = innerWidth / innerHeight;
       kamera.updateProjectionMatrix();
       ritare.setSize(innerWidth, innerHeight);
+      if (effekter) effekter.setSize(innerWidth, innerHeight);
     });
 
     // ===== Texturer (mönster) ritas med kod =====
@@ -486,6 +535,7 @@
       const t = new THREE.CanvasTexture(c);
       t.wrapS = t.wrapT = THREE.RepeatWrapping;
       t.magFilter = THREE.NearestFilter;
+      t.encoding = THREE.sRGBEncoding;
       return t;
     }
     const prickar = (bas, farger, antal) => (x, s) => {
@@ -536,7 +586,39 @@
         [[8, 8], [52, 8], [8, 52], [52, 52]].forEach(([a, b]) => x.fillRect(a, b, 4, 4));
       })
     };
+    // Fotoverkliga texturer från Poly Haven (CC0). Saknas en fil används det ritade mönstret.
+    const FOTO = { gras: "gras", jord: "klippa", sand: "sand", sandsten: "sandsten", sten: "sten", tegel: "tegel", tra: "tra" };
+    const FOTO_TEXTUR = {};
+    // Färgton per textur, så att världen blir färgglad som i ett Mario-spel
+    const FOTO_TON = { gras: 0x8ee06a, sand: 0xffe3b0, sandsten: 0xd9a066, tra: 0xffd9b0 };
+    function laddaTexturer() {
+      const laddare = new THREE.TextureLoader();
+      const hamta = (fil, farg) => new Promise((klar) => laddare.load(fil, (t) => {
+        t.wrapS = t.wrapT = THREE.RepeatWrapping;
+        t.anisotropy = Math.min(8, ritare.capabilities.getMaxAnisotropy());
+        if (farg) t.encoding = THREE.sRGBEncoding;
+        klar(t);
+      }, undefined, () => klar(null)));
+      return Promise.all(Object.entries(FOTO).map(async ([namn, fil]) => {
+        const [f, n] = await Promise.all([hamta("texturer/" + fil + "_farg.jpg", true), hamta("texturer/" + fil + "_normal.jpg", false)]);
+        if (f) FOTO_TEXTUR[namn] = { farg: f, normal: n };
+      }));
+    }
+    function upprepa(t, rx, ry) {
+      const k = t.clone();
+      k.needsUpdate = true;
+      k.repeat.set(rx, ry);
+      return k;
+    }
     function texturMaterial(namn, rx, ry, farg = 0xffffff) {
+      const foto = FOTO_TEXTUR[namn];
+      if (foto) {
+        return new THREE.MeshStandardMaterial({
+          map: upprepa(foto.farg, rx * 0.8, ry * 0.8),
+          normalMap: foto.normal ? upprepa(foto.normal, rx * 0.8, ry * 0.8) : null,
+          color: farg === 0xffffff && FOTO_TON[namn] ? FOTO_TON[namn] : farg, roughness: 0.95, metalness: 0
+        });
+      }
       const t = TEXTURER[namn].clone();
       t.needsUpdate = true;
       t.repeat.set(rx, ry);
@@ -601,14 +683,12 @@
       objekt.traverse((o) => {
         if (!o.isMesh) return;
         // Samma sorts material som resten av spelet, så att färgerna ser likadana ut
-        const byt = (mt) => {
-          const ny = new THREE.MeshLambertMaterial({
-            color: mt.color ? mt.color.clone() : 0xffffff,
-            map: mt.map || null, transparent: mt.transparent, opacity: mt.opacity, side: mt.side
-          });
-          if (ny.map) ny.map.encoding = THREE.LinearEncoding;
-          return ny;
-        };
+        const byt = (mt) => new THREE.MeshStandardMaterial({
+          // Färgen i Blender är den som ska synas i spelet
+          color: mt.color ? mt.color.clone().convertSRGBToLinear() : 0xffffff,
+          map: mt.map || null, transparent: mt.transparent, opacity: mt.opacity, side: mt.side,
+          roughness: 0.8, metalness: 0
+        });
         o.material = Array.isArray(o.material) ? o.material.map(byt) : byt(o.material);
         o.castShadow = true;
         o.receiveShadow = true;
@@ -639,7 +719,12 @@
     const kopia = (namn) => MODELL[namn].clone(true);
     // Mynten ska glänsa lite
     function lysande(namn, farg) {
-      if (MODELL[namn]) MODELL[namn].traverse((o) => { if (o.isMesh) o.material.emissive = new THREE.Color(farg); });
+      if (MODELL[namn]) MODELL[namn].traverse((o) => {
+        if (o.isMesh) {
+          Object.assign(o.material, { emissive: new THREE.Color(farg), metalness: 1, roughness: 0.35 });
+          o.material.color.set(0xffc23a); // guldfärg
+        }
+      });
     }
     const slump = (lista) => lista[Math.floor(Math.random() * lista.length)];
 
@@ -879,7 +964,7 @@
     let plattformar = [], fiender = [], mynt = [], block = [], partiklar = [];
     let mal = null, malFigur = null, boss = null, skak = 0, chockvagor = [];
     const myntForm = new THREE.CylinderGeometry(0.32, 0.32, 0.08, 20);
-    const myntMaterial = new THREE.MeshPhongMaterial({ color: 0xfacc15, emissive: 0x6b4a00, shininess: 90 });
+    const myntMaterial = new THREE.MeshStandardMaterial({ color: 0xffb000, emissive: 0x3a2000, metalness: 1, roughness: 0.35 });
     const blockForm = new THREE.BoxGeometry(1, 1, 1);
     const blockMaterial = new THREE.MeshLambertMaterial({ map: TEXTURER.block });
     const tomtMaterial = new THREE.MeshLambertMaterial({ map: TEXTURER.tomtBlock });
@@ -978,10 +1063,13 @@
       tema = TEMAN[bana.tema];
       plattformar = []; fiender = []; mynt = []; block = []; partiklar = [];
 
-      scen.background = new THREE.Color(tema.himmel);
-      scen.fog = new THREE.Fog(tema.himmel, 35, 110);
+      scen.background = tema.lava ? new THREE.Color(tema.himmel) : null;
+      himmel.visible = !tema.lava;
+      scen.fog = new THREE.Fog(tema.dimma, 30, 120);
       himmelsljus.intensity = tema.ljus;
-      sol.color.set(tema.lava ? 0xffa060 : 0xffffff);
+      sol.color.set(tema.solFarg);
+      sol.intensity = tema.solStyrka;
+      stallHimmel(tema);
 
       bana.plattformar.forEach(byggPlattform);
       bana.block.forEach(byggBlock);
@@ -1053,7 +1141,7 @@
 
       // Lava i borgen
       if (tema.lava) {
-        const lava = new THREE.Mesh(new THREE.PlaneGeometry(400, 400), new THREE.MeshBasicMaterial({ color: 0xff4500 }));
+        const lava = new THREE.Mesh(new THREE.PlaneGeometry(400, 400), new THREE.MeshBasicMaterial({ color: 0xff5a10 }));
         lava.rotation.x = -Math.PI / 2;
         lava.position.set(0, -6, -60);
         banGrupp.add(lava);
@@ -1815,7 +1903,7 @@
           skak *= 0.9;
         }
 
-        sol.position.set(spelare.x + 8, spelare.y + 18, spelare.z + 6);
+        sol.position.set(spelare.x, spelare.y, spelare.z).addScaledVector(SOL_RIKTNING, 30); // samma håll som solen på himlen
         sol.target.position.set(spelare.x, spelare.y, spelare.z);
 
         $("hud").textContent = HJALTAR[valdHjalte].namn + "  " + "❤️".repeat(Math.max(liv, 0)) +
@@ -1826,11 +1914,13 @@
         const t = performance.now() / 6000;
         kamera.position.set(Math.sin(t) * 16, 9, -20 + Math.cos(t) * 22);
         kamera.lookAt(0, 0, -25);
-        sol.position.set(8, 20, -10);
+        sol.position.set(0, 0, -25).addScaledVector(SOL_RIKTNING, 30);
         sol.target.position.set(0, 0, -25);
         $("hud").textContent = "";
       }
-      ritare.render(scen, kamera);
+      himmel.position.copy(kamera.position);
+      if (effekter) effekter.render();
+      else ritare.render(scen, kamera);
     }
 
     // ===== Spel-loopen =====
@@ -1850,7 +1940,7 @@
     $("knappStart").disabled = true;
     $("knappStart").textContent = "Laddar...";
     requestAnimationFrame(loop);
-    await laddaModeller();
+    await Promise.all([laddaModeller(), laddaTexturer()]);
     lysande("mynt", 0x5a3a00);
     laddaBana(0);
     stoppaMusik();
