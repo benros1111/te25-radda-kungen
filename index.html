@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-  <title>Rädda Kung Hussein</title>
+  <title>Rädda Kung Jensen</title>
   <style>
     html, body {
       margin: 0;
@@ -176,8 +176,8 @@
 
   <!-- Startskärm -->
   <div id="startSkarm" class="skarm">
-    <h1>Rädda Kung Hussein!</h1>
-    <p>Ozi och Ludde har kidnappat Kung Hussein. Ta dig igenom tre banor. Hoppa på fiendernas huvuden. Slå i lådorna med huvudet för att få mynt!</p>
+    <h1>Rädda Kung Jensen!</h1>
+    <p>Ozi, Ludde och lejonet Husein har kidnappat Kung Jensen. Ta dig igenom tre banor. Hoppa på fiendernas huvuden. Slå i lådorna med huvudet för att få mynt!</p>
     <h2>Välj hjälte</h2>
     <div>
       <button class="val vald" data-hjalte="mustafa">Super Mustafa</button>
@@ -302,7 +302,7 @@
           [0, 2.5, -35], [3, 4, -41],
           ...rad(-4, -55, 4, -55, 1, 5), [0, 2, -64], ...rad(-3, -71, 3, -71, 1, 3)
         ],
-        fiender: [["ozi", 0, -24], ["ludde", -3, -51], ["ozi", 3, -56]],
+        fiender: [["ozi", 0, -24], ["ludde", -3, -51], ["ozi", 3, -56], ["lejon", 0, -72, 3]],
         mal: { typ: "flagga", x: 0, z: -76 }
       },
       {
@@ -320,7 +320,7 @@
           ...rad(-5, -63, -5, -73, 1, 4), ...rad(5, -63, 5, -73, 1, 4),
           [0, 2.5, -79], ...rad(-2, -86, 2, -86, 1, 3)
         ],
-        fiender: [["ozi", -3, -34], ["ludde", 3, -42], ["ludde", 0, -64], ["ozi", -4, -70], ["ozi", 4, -72]],
+        fiender: [["ozi", -3, -34], ["ludde", 3, -42], ["lejon", 0, -39, 4], ["ludde", 0, -64], ["ozi", -4, -70], ["ozi", 4, -72]],
         mal: { typ: "flagga", x: 0, z: -90 }
       },
       {
@@ -339,7 +339,7 @@
           ...rad(-7, -96, -7, -108, 4, 4), ...rad(7, -96, 7, -108, 4, 4)
         ],
         fiender: [["ludde", 0, -21], ["ozi", -3, -26], ["ozi", 0, -51], ["ludde", 3, -56], ["ozi", -3, -58],
-                  ["ludde", -4, -80], ["ludde", 4, -86], ["ozi", 0, -89]],
+                  ["ludde", -4, -80], ["ludde", 4, -86], ["ozi", 0, -89], ["lejon", 0, -82, 5]],
         mal: { typ: "kung", x: 0, z: -108 },
         boss: { x: 0, z: -101 }
       }
@@ -653,6 +653,7 @@
       ozi:     ["modeller/ozi.glb", 1.2],
       ludde:   ["modeller/ludde.glb", 1.3],
       kung:    ["modeller/kung.glb", 2.0],
+      lejon:   ["modeller/lejon.glb", 1.5],
       // Saker på banan från Kenney.nl (CC0, fria att använda)
       trad1:       ["modeller/kenney/tree_default.glb", 3.2],
       trad2:       ["modeller/kenney/tree_oak.glb", 3.6],
@@ -687,7 +688,8 @@
           // Färgen i Blender är den som ska synas i spelet
           color: mt.color ? mt.color.clone().convertSRGBToLinear() : 0xffffff,
           map: mt.map || null, transparent: mt.transparent, opacity: mt.opacity, side: mt.side,
-          roughness: 0.8, metalness: 0
+          roughness: 0.8, metalness: 0,
+          vertexColors: mt.vertexColors // färg på varje punkt (används av lejonet)
         });
         o.material = Array.isArray(o.material) ? o.material.map(byt) : byt(o.material);
         o.castShadow = true;
@@ -857,6 +859,21 @@
         tand.rotation.x = Math.PI;
       }
       return { g, kropp };
+    }
+
+    // Lejonet Husein: fyra ben som går i kors, som ett riktigt djur
+    function byggLejon() {
+      if (!MODELL.lejon) {
+        const reserv = byggLudde(); // om filen saknas
+        return { ...reserv, ben: [], svans: null };
+      }
+      const g = new THREE.Group();
+      const kropp = new THREE.Group();
+      g.add(kropp);
+      const m = kopia("lejon");
+      kropp.add(m);
+      const hitta = (n) => m.getObjectByName(n) || new THREE.Group();
+      return { g, kropp, ben: ["BenFV", "BenFH", "BenBV", "BenBH"].map(hitta), svans: m.getObjectByName("Svans") };
     }
 
     function byggFlagga() {
@@ -1039,7 +1056,10 @@
     function skapaFiende([typ, x, z, vidd = 3]) {
       const p = plattformar.find((p) => !p.rorelse && !p.block &&
         x >= p.minX && x <= p.maxX && z >= p.minZ && z <= p.maxZ);
-      const { g, kropp } = typ === "ozi" ? byggOzi() : byggLudde();
+      const figurDelar = typ === "ozi" ? byggOzi() : typ === "lejon" ? byggLejon() : byggLudde();
+      const { g, kropp } = figurDelar;
+      const lejon = typ === "lejon";
+      const kant = lejon ? 1.1 : 0.6;
       const alarm = new THREE.Sprite(new THREE.SpriteMaterial({ map: alarmTextur }));
       alarm.scale.set(0.8, 0.8, 0.8);
       alarm.position.y = 2;
@@ -1048,9 +1068,11 @@
       banGrupp.add(g);
       fiender.push({
         typ, figur: g, kropp, alarm, x, z, y: p.topp, startX: x, vidd,
-        min: { x: p.minX + 0.6, z: p.minZ + 0.6 }, max: { x: p.maxX - 0.6, z: p.maxZ - 0.6 },
+        min: { x: p.minX + kant, z: p.minZ + kant }, max: { x: p.maxX - kant, z: p.maxZ - kant },
         riktning: 1, vinkel: 0, jakt: false, hoppY: 0, hoppV: 0, hoppPaus: 30,
-        dod: 0, levande: true, tid: Math.random() * 10, radie: 0.6, hojd: 1.2
+        dod: 0, levande: true, tid: Math.random() * 10,
+        radie: lejon ? 0.95 : 0.6, hojd: lejon ? 1.25 : 1.2,
+        liv: lejon ? 2 : 1, skydd: 0, arg: 1, ben: figurDelar.ben || [], svans: figurDelar.svans || null
       });
     }
 
@@ -1244,7 +1266,7 @@
         lage = "slut";
         spelaLjud("vinst");
         $("slutRubrik").textContent = "Du vann! 👑";
-        $("slutText").textContent = HJALTAR[valdHjalte].namn + " räddade Kung Hussein! Mynt: " + poang +
+        $("slutText").textContent = HJALTAR[valdHjalte].namn + " räddade Kung Jensen! Mynt: " + poang +
           ". Besegrade fiender: " + besegrade + ". Svårighet: " + S.namn + ".";
         $("knappIgen").classList.add("dold");
         $("sparaRuta").classList.remove("dold");
@@ -1482,6 +1504,17 @@
     }
 
     function trampa(f) {
+      if (f.liv > 1) {
+        // Lejonet tål ett hopp: det blir argt och snabbare
+        f.liv--;
+        f.skydd = 50;
+        f.arg = 1.6;
+        spelare.fartY = HOPP_KRAFT * 1.15;
+        spelaLjud("bossTraff");
+        spelaLjud("bossVral");
+        gnistor(f.x, f.y + 1, f.z, 0xd9a050, 12);
+        return;
+      }
       f.levande = false;
       f.dod = 25;
       f.alarm.visible = false;
@@ -1594,19 +1627,23 @@
         return;
       }
       if (!f.levande || lage !== "spelar") return;
+      if (f.skydd > 0) {
+        f.skydd--;
+        f.figur.visible = Math.floor(f.skydd / 4) % 2 === 0;
+      } else f.figur.visible = true;
 
       const dx = spelare.x - f.x, dz = spelare.z - f.z;
       const avst = Math.hypot(dx, dz) || 0.001;
       const ser = avst < S.jaktAvstand && Math.abs(spelare.y - f.y) < 3;
       if (ser && !f.jakt) {
         f.jakt = true;
-        f.hoppV = 0.16; // hoppar till när den ser dig
-        spelaLjud("upptack");
+        f.hoppV = f.typ === "lejon" ? 0.08 : 0.16; // hoppar till när den ser dig
+        spelaLjud(f.typ === "lejon" ? "bossVral" : "upptack"); // lejonet vrålar
       }
       if (!ser) f.jakt = false;
       f.alarm.visible = f.jakt;
 
-      let mx, mz, fart = FIENDE_FART * S.fiendeFart;
+      let mx, mz, fart = FIENDE_FART * S.fiendeFart * (f.typ === "lejon" ? 1.3 : 1) * f.arg;
       if (f.jakt) {
         mx = dx / avst; mz = dz / avst; fart *= 1.9;
         // Ludde hoppar mot dig
@@ -1631,12 +1668,25 @@
       // Gång-animation
       f.tid += fart * 8;
       if (f.typ === "ozi") f.kropp.rotation.z = Math.sin(f.tid) * 0.18;
+      else if (f.typ === "lejon") {
+        // Diagonala benpar rör sig tillsammans: fram vänster + bak höger, fram höger + bak vänster
+        const steg = Math.sin(f.tid * 0.8) * 0.45;
+        if (f.ben.length === 4) {
+          f.ben[0].rotation.x = steg;
+          f.ben[3].rotation.x = steg;
+          f.ben[1].rotation.x = -steg;
+          f.ben[2].rotation.x = -steg;
+        }
+        if (f.svans) f.svans.rotation.y = Math.sin(f.tid * 0.4) * 0.35;
+        f.kropp.position.y = Math.abs(Math.cos(f.tid * 0.8)) * 0.03;
+      }
       else f.kropp.scale.y = 1 + Math.sin(f.tid * 2) * 0.06;
       f.figur.position.set(f.x, f.y + f.hoppY, f.z);
       f.figur.rotation.y = f.vinkel;
 
       // Hoppa på huvudet = fienden besegrad. Gå in i den = aj!
       const fy = f.y + f.hoppY;
+      if (f.skydd > 0) return;
       if (avst < f.radie + 0.35 && spelare.fartY < 0 &&
           spelare.y > fy + f.hojd * 0.45 && spelare.y < fy + f.hojd + 0.6) {
         trampa(f);
