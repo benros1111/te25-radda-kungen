@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-  <title>Rädda Kung Jensen</title>
+  <title>Rädda Skolans Kung</title>
   <style>
     html, body {
       margin: 0;
@@ -182,8 +182,8 @@
 
   <!-- Startskärm -->
   <div id="startSkarm" class="skarm">
-    <h1>Rädda Kung Jensen!</h1>
-    <p>Ozi, Ludde och lejonet Husein har kidnappat Kung Jensen. Ta dig igenom fyra banor. Hoppa på fiendernas huvuden. Slå i lådorna med huvudet för att få mynt!</p>
+    <h1>Rädda Skolans Kung!</h1>
+    <p>Ozi, Ludde och lejonet Husein har kidnappat Skolans Kung. Ta dig igenom fyra banor. Hoppa på fiendernas huvuden. Slå i lådorna med huvudet för att få mynt!</p>
     <h2>Välj hjälte</h2>
     <div>
       <button class="val vald" data-hjalte="mustafa">Super Mustafa</button>
@@ -373,6 +373,10 @@
         fiender: [["ozi", 0, -12, 1.2], ["ludde", 0, -30, 1.2], ["ozi", -3, -42, 3], ["ludde", 3, -47, 3],
                   ["lejon", 0, -73, 2.5], ["ozi", -4, -86, 4], ["ludde", 4, -90, 4]],
         mal: { typ: "kung", x: 0, z: -92 },
+        // Röda ögon i mörka hörn
+        ogon: [[0, 1.5, -21.6], [-4.4, 1.4, -50.4], [3.4, 4.4, -77.4], [5.5, 4.6, -94.4], [-3.4, 1.6, 5.3]],
+        // Spöket svävar tvärs över när spelaren passerar z
+        spoken: [{ z: -38, x0: -5.5, x1: 5.5, y: 0.2, zSpoke: -43 }, { z: -82, x0: 6.5, x1: -6.5, y: 3.2, zSpoke: -87 }],
         // Fasta kameror: när spelaren går in i ett område byter kameran vinkel
         kameror: [
           { fran: 99, till: -6, pos: [3.2, 4.4, 5.4] },
@@ -389,7 +393,7 @@
     const TEMAN = {
       ang:  { himmel: 0x87ceeb, dimma: 0xb9d4e6, dis: 6, rayleigh: 1.6, solFarg: 0xfff1dc, solStyrka: 2.6, ljus: 0.55, topp: "gras", sida: "jord",     kulle: 0x4ade80, dekor: "trad",   moln: true },
       oken: { himmel: 0xffcf8a, dimma: 0xe8cfa4, dis: 12, rayleigh: 1.2, solFarg: 0xffe2b8, solStyrka: 3.0, ljus: 0.55, topp: "sand", sida: "sandsten", kulle: 0xe9b872, dekor: "kaktus", moln: true },
-      herrgard: { himmel: 0x050403, dimma: 0x0b0806, dis: 20, rayleigh: 3, solHojd: 0.05, solFarg: 0xff9a60, solStyrka: 0, ljus: 0.3,
+      herrgard: { himmel: 0x050403, dimma: 0x0b0806, dis: 20, rayleigh: 3, solHojd: 0.05, solFarg: 0xff9a60, solStyrka: 0, ljus: 0.18,
                   topp: "tra", sida: "tegel", kulle: 0x000000, dekor: "ingen", moln: false, inne: true },
       borg: { himmel: 0x2a1630, dimma: 0x3a1a2a, dis: 20, rayleigh: 3, solHojd: 0.05, solFarg: 0xff9a60, solStyrka: 1.6, ljus: 0.35, topp: "sten", sida: "tegel",    kulle: 0x3b2a3f, dekor: "fackla", moln: false, lava: true }
     };
@@ -431,6 +435,29 @@
     }
     const midi = (n) => 440 * Math.pow(2, (n - 69) / 12);
 
+    // Brus (som radioprassel) genom ett filter: blir åska, sus och vind
+    function brus(tid, start, volym, fran, till, typ = "lowpass") {
+      if (!ljudCtx) return;
+      const langd = Math.floor(ljudCtx.sampleRate * tid);
+      const buffer = ljudCtx.createBuffer(1, langd, ljudCtx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < langd; i++) data[i] = Math.random() * 2 - 1;
+      const kalla = ljudCtx.createBufferSource();
+      kalla.buffer = buffer;
+      const filter = ljudCtx.createBiquadFilter();
+      filter.type = typ;
+      const t = ljudCtx.currentTime + start;
+      filter.frequency.setValueAtTime(fran, t);
+      filter.frequency.exponentialRampToValueAtTime(till, t + tid);
+      const g = ljudCtx.createGain();
+      g.gain.setValueAtTime(0.001, t);
+      g.gain.exponentialRampToValueAtTime(volym, t + 0.05);
+      g.gain.exponentialRampToValueAtTime(0.001, t + tid);
+      kalla.connect(filter).connect(g).connect(effektVolym);
+      kalla.start(t);
+      kalla.stop(t + tid + 0.05);
+    }
+
     const LJUD = {
       hopp:    () => ton(260, 620, 0.16, "square", 0.18),
       mynt:    () => { ton(1046, null, 0.07, "triangle", 0.35); ton(1568, null, 0.22, "triangle", 0.35, 0.06); },
@@ -444,6 +471,10 @@
       bossTraff: () => [600, 450, 300].forEach((f, i) => ton(f, f / 2, 0.12, "square", 0.25, i * 0.08)),
       bossDod:   () => [72, 67, 64, 60, 55, 48].forEach((n, i) => ton(midi(n), null, 0.25, "sawtooth", 0.2, i * 0.12)),
       burOppen:  () => [60, 64, 67, 72, 76, 79, 84].forEach((n, i) => ton(midi(n), null, 0.25, "triangle", 0.3, i * 0.08)),
+      aska:    () => { brus(3, 0, 1.2, 500, 50); brus(1.5, 0.15, 0.7, 1500, 80); },
+      sus:     () => brus(1.4, 0, 0.35, 250, 2500, "bandpass"),
+      knarr:   () => { ton(70 + Math.random() * 50, 45, 0.7, "sawtooth", 0.06); ton(140, 90, 0.4, "triangle", 0.03, 0.2); },
+      hjarta:  () => { ton(62, 38, 0.15, "sine", 0.9); ton(56, 36, 0.15, "sine", 0.7, 0.24); },
       klar:    () => [60, 64, 67, 72, 76, 79].forEach((n, i) => ton(midi(n + 12), null, 0.2, "square", 0.15, i * 0.1)),
       vinst:   () => [72, 76, 79, 84, 79, 84, 88].forEach((n, i) => ton(midi(n), null, 0.3, "square", 0.15, i * 0.14)),
       forlust: () => [67, 63, 60, 55].forEach((n, i) => ton(midi(n), null, 0.35, "triangle", 0.3, i * 0.25))
@@ -465,7 +496,7 @@
         bas: [45, 52, 45, 52, 50, 57, 50, 57, 45, 52, 43, 50, 45, 52, 45, null]
       },
       herrgard: {
-        takt: 0.22,
+        takt: 0.26,
         noter: [57, null, 60, null, 64, null, 63, null, 57, null, 60, null, 62, null, null, null,
                 56, null, 59, null, 62, null, 61, null, 57, null, null, null, null, null, null, null],
         bas: [45, null, 45, null, 44, null, 44, null, 45, null, 45, null, 40, null, null, null]
@@ -576,18 +607,18 @@
 
     // Skräckfilter: mörka kanter (vinjett), filmkorn och lite blekta, varma färger
     const SKRACK_FILTER = {
-      uniforms: { tDiffuse: { value: null }, tid: { value: 0 }, styrka: { value: 0 } },
+      uniforms: { tDiffuse: { value: null }, tid: { value: 0 }, styrka: { value: 0 }, puls: { value: 0 } },
       vertexShader: "varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }",
       fragmentShader: `
-        uniform sampler2D tDiffuse; uniform float tid; uniform float styrka; varying vec2 vUv;
+        uniform sampler2D tDiffuse; uniform float tid; uniform float styrka; uniform float puls; varying vec2 vUv;
         float slump(vec2 p) { return fract(sin(dot(p, vec2(12.9898, 78.233)) + tid) * 43758.5453); }
         void main() {
           vec4 c = texture2D(tDiffuse, vUv);
           float gra = dot(c.rgb, vec3(0.299, 0.587, 0.114));
           vec3 f = mix(c.rgb, gra * vec3(1.08, 0.95, 0.78), 0.4 * styrka);          // blekt och varmt
           float d = distance(vUv, vec2(0.5));
-          f *= mix(1.0, smoothstep(0.82, 0.22, d), styrka);                        // mörka kanter
-          f += (slump(floor(vUv * vec2(960.0, 540.0))) - 0.5) * 0.035 * styrka;   // filmkorn
+          f *= mix(1.0, smoothstep(0.78 - puls * 0.18, 0.15, d), styrka);          // mörka kanter (krymper vid hjärtslag)
+          f += (slump(floor(vUv * vec2(960.0, 540.0))) - 0.5) * 0.05 * styrka;    // filmkorn
           gl_FragColor = vec4(max(f, 0.0), c.a);
         }`
     };
@@ -1172,7 +1203,7 @@
 
       scen.background = tema.lava || tema.inne ? new THREE.Color(tema.himmel) : null;
       himmel.visible = !tema.lava && !tema.inne;
-      scen.fog = tema.inne ? new THREE.Fog(tema.dimma, 8, 30) : new THREE.Fog(tema.dimma, 30, 120);
+      scen.fog = tema.inne ? new THREE.Fog(tema.dimma, 4, 21) : new THREE.Fog(tema.dimma, 30, 120);
       himmelsljus.intensity = tema.ljus;
       himmelsljus.color.set(tema.inne ? 0x8a6a50 : 0xdfefff);
       sol.color.set(tema.solFarg);
@@ -1182,7 +1213,7 @@
       if (tema.inne) scen.environment = null;   // ingen himmel som speglas inomhus
       lampPlatser = [];
       lampPool.forEach((l) => (l.intensity = 0));
-      if (skrackFilter) skrackFilter.uniforms.styrka.value = tema.inne ? 1 : 0;
+      if (skrackFilter) { skrackFilter.uniforms.styrka.value = tema.inne ? 1 : 0; skrackFilter.uniforms.puls.value = 0; }
       document.body.classList.toggle("inne", !!tema.inne);
       kameraOmrade = null;
 
@@ -1202,7 +1233,8 @@
       malFigur.g.position.set(mal.x, mal.y, mal.z);
       banGrupp.add(malFigur.g);
 
-      if (tema.inne) byggHerrgard();
+      fonster.length = 0;
+      if (tema.inne) { byggHerrgard(); byggSkrack(); }
 
       // Dekor på de stora markerna
       bana.plattformar.forEach((d, i) => {
@@ -1334,7 +1366,21 @@
               const kupa = new THREE.Mesh(new THREE.SphereGeometry(0.12, 12, 8), new THREE.MeshBasicMaterial({ color: 0xffd08a }));
               kupa.position.set(inne - sx * 0.25, golv + 2.42, z);
               banGrupp.add(arm, kupa);
-              lampPlatser.push(new THREE.Vector3(inne - sx * 0.35, golv + 2.45, z));
+              const tur = Math.random();
+              if (tur < 0.2) kupa.material.color.set(0x1a1610);   // trasig lampa: mörkt
+              else lampPlatser.push({ p: new THREE.Vector3(inne - sx * 0.35, golv + 2.45, z), kupa,
+                                      blinkar: tur < 0.5, pa: true, styrka: 5 });
+            } else if (nr % 4 === 1) {
+              // Fönster: blixten lyser in genom det
+              const ram = new THREE.Mesh(new THREE.BoxGeometry(0.1, 1.5, 1.0), texturMaterial("tra", 0.5, 0.8, 0x3a2414));
+              ram.position.set(inne - sx * 0.05, golv + 2.0, z);
+              const glas = new THREE.Mesh(new THREE.PlaneGeometry(0.8, 1.3), new THREE.MeshBasicMaterial({ color: 0x060a14 }));
+              glas.position.set(inne - sx * 0.11, golv + 2.0, z);
+              glas.rotation.y = -sx * Math.PI / 2;
+              const sprojs = new THREE.Mesh(new THREE.BoxGeometry(0.04, 1.3, 0.05), new THREE.MeshStandardMaterial({ color: 0x2a1a10 }));
+              sprojs.position.set(inne - sx * 0.12, golv + 2.0, z);
+              banGrupp.add(ram, glas, sprojs);
+              fonster.push(glas.material);
             } else if (nr % 3 === 0) {
               // Dörr
               const dorr = new THREE.Mesh(new THREE.BoxGeometry(0.08, 2.3, 1.1), texturMaterial("tra", 0.6, 1.2, 0x4a2c18));
@@ -1357,6 +1403,13 @@
         // Bakvägg i första och sista rummet
         if (i === 0) vagg(d.x, d.z + d.d / 2 + 0.2, d.w + 0.8, 0.4, golv);
         if (i === bana.plattformar.length - 1) vagg(d.x, d.z - d.d / 2 - 0.2, d.w + 0.8, 0.4, golv);
+        // Spindelnät i de bortre hörnen
+        for (const sx of [-1, 1]) {
+          const nat = new THREE.Mesh(new THREE.PlaneGeometry(1.3, 1.3), natMaterial);
+          nat.position.set(d.x + sx * (d.w / 2 - 0.45), golv + 3.7, d.z - d.d / 2 + 0.45);
+          nat.rotation.y = sx * Math.PI / 4;
+          banGrupp.add(nat);
+        }
         // Mattor på golvet
         const matta = new THREE.Mesh(new THREE.PlaneGeometry(Math.min(2.2, d.w - 1), d.d - 1.5), new THREE.MeshStandardMaterial({ color: 0x4a0f12, roughness: 1 }));
         matta.rotation.x = -Math.PI / 2;
@@ -1366,17 +1419,155 @@
       });
     }
 
+    const fonster = [];
+    // Spindelnät ritat med kod
+    const natMaterial = new THREE.MeshBasicMaterial({
+      map: (() => {
+        const t = textur((x, s) => {
+          x.clearRect(0, 0, s, s);
+          x.strokeStyle = "rgba(220,220,220,0.55)"; x.lineWidth = 1;
+          for (let i = 0; i < 9; i++) { const v = (i / 9) * Math.PI * 2; x.beginPath(); x.moveTo(s / 2, s / 2); x.lineTo(s / 2 + Math.cos(v) * s, s / 2 + Math.sin(v) * s); x.stroke(); }
+          for (let r = 8; r < s / 2; r += 9) { x.beginPath(); x.arc(s / 2, s / 2, r, 0, 7); x.stroke(); }
+        }, 128);
+        t.magFilter = THREE.LinearFilter;
+        return t;
+      })(),
+      transparent: true, side: THREE.DoubleSide, depthWrite: false
+    });
+
+    // Skräck-läget för herrgården
+    const skrack = { nastaBlixt: 0, blixt: 0, nastaKnarr: 0, nastaHjarta: 0, ogon: [], spoke: null, spokeTriggers: [] };
+
+    function byggSkrack() {
+      skrack.nastaBlixt = performance.now() + 6000;
+      skrack.nastaKnarr = performance.now() + 4000;
+      skrack.blixt = 0;
+      skrack.ogon = (bana.ogon || []).map(([x, y, z]) => {
+        // Två röda, lysande ögon i mörkret
+        const g = new THREE.Group();
+        g.position.set(x, y, z);
+        for (const s of [-1, 1]) {
+          const o = new THREE.Mesh(new THREE.SphereGeometry(0.05, 10, 6), new THREE.MeshBasicMaterial({ color: 0xff2010 }));
+          o.position.x = s * 0.11;
+          o.scale.set(1.4, 0.6, 1);
+          g.add(o);
+        }
+        banGrupp.add(g);
+        return { g, borta: false, blink: 0 };
+      });
+      // Spöke: genomskinligt lakan med mörka ögonhål
+      const spoke = new THREE.Group();
+      const mat = new THREE.MeshStandardMaterial({ color: 0xe8ecff, emissive: 0x30344a, transparent: true, opacity: 0, roughness: 1, depthWrite: false });
+      const kropp = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.6, 1.3, 16, 1, true), mat);
+      kropp.position.y = 0.65;
+      const huvud = new THREE.Mesh(new THREE.SphereGeometry(0.36, 16, 12), mat);
+      huvud.position.y = 1.35;
+      spoke.add(kropp, huvud);
+      for (const s of [-1, 1]) {
+        const hal = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 6), new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0 }));
+        hal.position.set(s * 0.13, 1.42, 0.31);
+        hal.scale.set(0.8, 1.3, 0.5);
+        spoke.add(hal);
+      }
+      spoke.visible = false;
+      banGrupp.add(spoke);
+      skrack.spoke = { g: spoke, mat, hal: spoke.children.slice(2), t: -1 };
+      skrack.spokeTriggers = (bana.spoken || []).map((s) => ({ ...s, anvand: false }));
+    }
+
+    function uppdateraSkrack() {
+      const nu = performance.now();
+      // Blixt och åska
+      if (nu > skrack.nastaBlixt) {
+        skrack.blixt = nu;
+        skrack.nastaBlixt = nu + 9000 + Math.random() * 12000;
+        setTimeout(() => spelaLjud("aska"), 500 + Math.random() * 900);
+      }
+      const b = nu - skrack.blixt;
+      const ljus = (b < 90) || (b > 180 && b < 250);   // två snabba blixtar
+      himmelsljus.intensity = ljus ? 2.6 : tema.ljus;
+      himmelsljus.color.set(ljus ? 0xc8d8ff : 0x8a6a50);
+      fonster.forEach((m) => m.color.set(ljus ? 0xdfe8ff : 0x060a14));
+
+      // Knarrande golv
+      if (nu > skrack.nastaKnarr) {
+        spelaLjud("knarr");
+        skrack.nastaKnarr = nu + 5000 + Math.random() * 9000;
+      }
+
+      // Hjärtslag när en fiende är nära
+      let narmast = 99;
+      for (const f of fiender) if (f.levande) narmast = Math.min(narmast, Math.hypot(f.x - spelare.x, f.z - spelare.z));
+      const pulsSlag = narmast < 5;
+      if (pulsSlag && nu > skrack.nastaHjarta) {
+        spelaLjud("hjarta");
+        skrack.nastaHjarta = nu + 700 + narmast * 120;
+        skrack.slag = nu;
+      }
+      if (skrackFilter) {
+        const sedan = nu - (skrack.slag || 0);
+        skrackFilter.uniforms.puls.value = pulsSlag ? Math.max(0, 1 - sedan / 350) : 0;
+      }
+
+      // Röda ögon: blinkar ibland och försvinner när man kommer nära
+      for (const o of skrack.ogon) {
+        if (o.borta) continue;
+        o.g.lookAt(kamera.position);
+        if (Math.random() < 0.005) o.blink = 8;
+        if (o.blink > 0) o.blink--;
+        o.g.scale.y = o.blink > 0 ? 0.1 : 1;
+        if (o.g.position.distanceTo(new THREE.Vector3(spelare.x, spelare.y + 1, spelare.z)) < 4.5) {
+          o.borta = true;
+          o.g.visible = false;
+          spelaLjud("sus");
+        }
+      }
+
+      // Spöket: svävar tvärs över rummet när man kommer till rätt ställe
+      for (const t of skrack.spokeTriggers) {
+        if (!t.anvand && spelare.z < t.z) {
+          t.anvand = true;
+          skrack.spoke.t = 0;
+          skrack.spoke.fran = new THREE.Vector3(t.x0, t.y, t.zSpoke);
+          skrack.spoke.till = new THREE.Vector3(t.x1, t.y, t.zSpoke);
+          skrack.spoke.g.visible = true;
+          skrack.spoke.g.rotation.y = t.x1 > t.x0 ? Math.PI / 2 : -Math.PI / 2;
+          spelaLjud("sus");
+        }
+      }
+      const sp = skrack.spoke;
+      if (sp && sp.t >= 0) {
+        sp.t += 1 / 150;
+        const t = Math.min(sp.t, 1);
+        sp.g.position.lerpVectors(sp.fran, sp.till, t);
+        sp.g.position.y += Math.sin(t * Math.PI * 4) * 0.15;
+        sp.g.lookAt(kamera.position.x, sp.g.position.y, kamera.position.z);   // stirrar på dig
+        const synlig = Math.sin(t * Math.PI);            // tonar in och ut
+        sp.mat.opacity = 0.55 * synlig;
+        sp.hal.forEach((h) => (h.material.opacity = 0.9 * synlig));
+        if (sp.t >= 1) { sp.t = -1; sp.g.visible = false; }
+      }
+    }
+
     // Flytta lamporna till de lampor som är närmast spelaren
     function uppdateraLampor() {
       if (!lampPlatser.length) return;
+      for (const l of lampPlatser) {
+        // Blinkande lampor slocknar och tänds lite hur som helst
+        if (l.blinkar && Math.random() < (l.pa ? 0.03 : 0.12)) {
+          l.pa = !l.pa;
+          l.kupa.material.color.set(l.pa ? 0xffd08a : 0x2a2014);
+        }
+      }
       const nara = lampPlatser
-        .map((p) => ({ p, d: (p.x - spelare.x) ** 2 + (p.z - spelare.z) ** 2 + (p.y - spelare.y) ** 2 }))
+        .filter((l) => l.pa)
+        .map((l) => ({ p: l.p, styrka: l.styrka, d: (l.p.x - spelare.x) ** 2 + (l.p.z - spelare.z) ** 2 + (l.p.y - spelare.y) ** 2 }))
         .sort((a, b) => a.d - b.d);
       lampPool.forEach((l, i) => {
         const n = nara[i];
         if (!n) { l.intensity = 0; return; }
         l.position.copy(n.p);
-        l.intensity = 6.5 * (0.92 + Math.random() * 0.08); // lite fladdrande ljus
+        l.intensity = n.styrka * (0.9 + Math.random() * 0.1); // fladdrande ljus
       });
     }
 
@@ -1469,7 +1660,7 @@
         lage = "slut";
         spelaLjud("vinst");
         $("slutRubrik").textContent = "Du vann! 👑";
-        $("slutText").textContent = HJALTAR[valdHjalte].namn + " räddade Kung Jensen! Mynt: " + poang +
+        $("slutText").textContent = HJALTAR[valdHjalte].namn + " räddade Skolans Kung! Mynt: " + poang +
           ". Besegrade fiender: " + besegrade + ". Svårighet: " + S.namn + ".";
         $("knappIgen").classList.add("dold");
         $("sparaRuta").classList.remove("dold");
@@ -2160,6 +2351,7 @@
           kameraTitt.lerp(tittPunkt.set(spelare.x, spelare.y + 1, spelare.z), 0.1);
           kamera.lookAt(kameraTitt);
           uppdateraLampor();
+          if (tema.inne && lage === "spelar") uppdateraSkrack();
         } else {
           // Kameran följer mjukt efter. Står mobilen upp backar kameran mer.
           const staende = kamera.aspect < 0.9;
