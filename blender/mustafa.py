@@ -111,6 +111,10 @@ for s in (1, -1):
 # ===== Hög fade: kort, mörkare hud på sidorna och håret bara högst upp =====
 def bara_toppen(o, zmin, zmax=9, ta_bort_fram=False):
     """Behåll bara en del av ett klot: mellan höjd zmin och zmax (räknat från -1 till 1)."""
+    bpy.context.view_layer.objects.active = o
+    bpy.ops.object.mode_set(mode="EDIT")
+    bpy.ops.mesh.select_all(action="DESELECT")   # börja utan något markerat
+    bpy.ops.object.mode_set(mode="OBJECT")
     for v in o.data.vertices:
         v.select = v.co.z < zmin or v.co.z > zmax or (ta_bort_fram and v.co.y < -0.55)
     bpy.ops.object.mode_set(mode="EDIT")
