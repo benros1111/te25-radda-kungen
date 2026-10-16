@@ -648,7 +648,7 @@
       const m = kopia(namn);
       kropp.add(m);
       const hitta = (n) => m.getObjectByName(n) || new THREE.Group();
-      return { g: grupp, grupp, kropp, ben: [hitta("BenV"), hitta("BenH")], armar: [hitta("ArmV"), hitta("ArmH")], mantel: null };
+      return { g: grupp, grupp, kropp, ben: [hitta("BenV"), hitta("BenH")], armar: [hitta("ArmV"), hitta("ArmH")], mantel: m.getObjectByName("Mantel") };
     }
 
     function byggHjalte(typ) {
@@ -1793,7 +1793,7 @@
           figur.armar[0].rotation.x = -2.6;
           figur.armar[1].rotation.x = -0.8;
         }
-        if (figur.mantel) figur.mantel.rotation.x = -0.15 - fart * 4 - (spelare.paMarken ? 0 : 0.4);
+        if (figur.mantel) figur.mantel.rotation.x = 0.15 + fart * 4 + (spelare.paMarken ? 0 : 0.4); // fladdrar bakåt
         spelare.squash += (1 - spelare.squash) * 0.15;
         figur.kropp.scale.set(1 / Math.sqrt(spelare.squash), spelare.squash, 1 / Math.sqrt(spelare.squash));
         figur.grupp.position.set(spelare.x, spelare.y, spelare.z);
